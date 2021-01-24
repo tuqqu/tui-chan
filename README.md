@@ -1,9 +1,8 @@
 # tui-chan
-An imageboard Terminal User Interface.
+An Imageboard Terminal User Interface.
+Currently supports 4chan only.
 
 ![demo](docs/demo.gif)
-
-Currently supports 4chan only.
 
 ## Installation
 Download the [latest release][latest-releases]. The binary executable is `tui-chan`. Put it in your PATH so that you can execute it from everywhere.
