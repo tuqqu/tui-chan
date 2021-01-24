@@ -1,0 +1,27 @@
+[package]
+name = "tui-chan"
+version = "0.1.0"
+authors = ["tuqqu <artkurbidaev@gmail.com>"]
+edition = "2018"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+reqwest = { version = "0.10", features = ["json"] }
+tokio = { version = "0.2", features = ["full"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tui = "0.14"
+termion = "1.5"
+chrono = "0.4"
+htmlescape="0.3"
+regex="1.4"
+voca_rs="1.13"
+clipboard = "0.5"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
