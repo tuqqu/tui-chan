@@ -1,26 +1,22 @@
-use std::{
-    env,
-    io,
-    process, str,
-};
+use std::{env, io, process, str};
 
 use clipboard::{ClipboardContext, ClipboardProvider};
 use reqwest::Client;
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tokio::runtime::Runtime;
 use tui::{
-    backend::{TermionBackend},
+    backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
+    Terminal,
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
-    Terminal,
 };
 
 use client::ChanClient;
 
 use crate::app::{App, Event, Events};
-use crate::client::api::{from_name, ChanApi};
+use crate::client::api::{ChanApi, from_name};
 use crate::formatter::{format_default, format_post};
 use crate::model::{Board, Thread, ThreadList, ThreadPost};
 use crate::view::{SelectedField, StyleProvider};

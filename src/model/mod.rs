@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Board {
     pub board: String,
@@ -16,8 +15,8 @@ pub struct ThreadList {
 }
 
 impl ThreadList {
-    pub fn new() -> ThreadList {
-        ThreadList { page: 1 }
+    pub fn new() -> Self {
+        Self { page: 1 }
     }
 
     pub fn next_page(&mut self) -> u8 {
