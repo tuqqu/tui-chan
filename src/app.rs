@@ -1,12 +1,13 @@
 use std::{
     io,
     sync::{
-        atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
+        Arc,
+        atomic::{AtomicBool, Ordering}, mpsc,
     },
     thread,
     time::Duration,
 };
+
 use termion::{
     event::Key,
     input::TermRead,
@@ -25,8 +26,8 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(boards: Vec<Board>, threads: Vec<Thread>, thread: Vec<ThreadPost>) -> App {
-        App {
+    pub fn new(boards: Vec<Board>, threads: Vec<Thread>, thread: Vec<ThreadPost>) -> Self {
+        Self {
             boards: ItemLIst::new(boards),
             threads: ItemLIst::new(threads),
             thread: ItemLIst::new(thread),

@@ -1,5 +1,3 @@
-
-
 pub trait ChanApi {
     fn boards(&self) -> String;
 
@@ -16,7 +14,7 @@ pub trait ChanApi {
     fn url_file(&self, board: &str, filename: String) -> String;
 }
 
-pub struct Api4chan {}
+pub struct Api4chan;
 
 impl Api4chan {
     const BASE_API_URL: &'static str = "https://a.4cdn.org";
@@ -26,29 +24,29 @@ impl Api4chan {
 
 impl ChanApi for Api4chan {
     fn boards(&self) -> String {
-        format!("{}/boards.json", Api4chan::BASE_API_URL)
+        format!("{}/boards.json", Self::BASE_API_URL)
     }
 
     fn threads(&self, board: &str, page: u8) -> String {
-        format!("{}/{}/{}.json", Api4chan::BASE_API_URL, board, page)
+        format!("{}/{}/{}.json", Self::BASE_API_URL, board, page)
     }
 
     fn thread(&self, board: &str, no: u64) -> String {
-        format!("{}/{}/thread/{}.json", Api4chan::BASE_API_URL, board, no)
+        format!("{}/{}/thread/{}.json", Self::BASE_API_URL, board, no)
     }
 
     fn url_board(&self, board: &str) -> String {
-        format!("{}/{}/", Api4chan::BASE_URL, board)
+        format!("{}/{}/", Self::BASE_URL, board)
     }
 
     fn url_thread(&self, board: &str, no: u64) -> String {
-        format!("{}/{}/thread/{}", Api4chan::BASE_URL, board, no)
+        format!("{}/{}/thread/{}", Self::BASE_URL, board, no)
     }
 
     fn url_thread_post(&self, board: &str, no: u64, post_no: u64) -> String {
         format!(
             "{}/{}/thread/{}#p{}",
-            Api4chan::BASE_URL,
+            Self::BASE_URL,
             board,
             no,
             post_no
@@ -56,7 +54,7 @@ impl ChanApi for Api4chan {
     }
 
     fn url_file(&self, board: &str, filename: String) -> String {
-        format!("{}/{}/{}", Api4chan::BASE_MEDIA_URL, board, filename)
+        format!("{}/{}/{}", Self::BASE_MEDIA_URL, board, filename)
     }
 }
 

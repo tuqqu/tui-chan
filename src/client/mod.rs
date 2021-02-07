@@ -2,7 +2,6 @@ use std::error::Error;
 
 use reqwest::Client;
 
-
 use crate::{
     client::api::ChanApi,
     client::response::{BoardListResponse, ThreadListResponse, ThreadResponse},
@@ -18,8 +17,8 @@ pub struct ChanClient {
 }
 
 impl ChanClient {
-    pub fn new(client: Client, api: &'static dyn ChanApi) -> ChanClient {
-        ChanClient { api, client }
+    pub fn new(client: Client, api: &'static dyn ChanApi) -> Self {
+        Self { api, client }
     }
 
     pub async fn get_boards(&self) -> Result<Vec<Board>, Box<dyn Error>> {
