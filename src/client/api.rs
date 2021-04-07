@@ -44,13 +44,7 @@ impl ChanApi for Api4chan {
     }
 
     fn url_thread_post(&self, board: &str, no: u64, post_no: u64) -> String {
-        format!(
-            "{}/{}/thread/{}#p{}",
-            Self::BASE_URL,
-            board,
-            no,
-            post_no
-        )
+        format!("{}/{}/thread/{}#p{}", Self::BASE_URL, board, no, post_no)
     }
 
     fn url_file(&self, board: &str, filename: String) -> String {

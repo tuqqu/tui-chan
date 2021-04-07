@@ -14,11 +14,10 @@ pub fn format_default(str: &str) -> String {
 }
 
 pub fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
-    let mut lines = vec![];
-    lines.push(Spans::from(""));
+    let mut lines = vec![Spans::from("")];
     let mut header: Vec<Span> = vec![];
 
-    if post.sub.len() != 0 {
+    if !post.sub.is_empty() {
         header.push(Span::styled(
             format_default(&post.sub),
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
@@ -69,16 +68,19 @@ pub fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
     const LIMIT_SHORT: usize = 10;
     const LIMIT_LONG: usize = 100;
 
-    let cut_com = format_post_contents(&post.com, LEN, if short { LIMIT_SHORT } else { LIMIT_LONG });
+    let cut_com =
+        format_post_contents(&post.com, LEN, if short { LIMIT_SHORT } else { LIMIT_LONG });
     for span in cut_com {
-        lines.push(Spans::from(span));
+        lines.push(span);
     }
 
     if short {
-        lines.push(Spans::from(
-            Span::styled(format_default(&format!("{} Replies", &post.replies)),
-                         Style::default().fg(Color::Magenta).add_modifier(Modifier::ITALIC),
-            )));
+        lines.push(Spans::from(Span::styled(
+            format_default(&format!("{} Replies", &post.replies)),
+            Style::default()
+                .fg(Color::Magenta)
+                .add_modifier(Modifier::ITALIC),
+        )));
     }
 
     lines.push(Spans::from(""));
@@ -115,8 +117,7 @@ fn format_post_contents(string: &str, sub_len: usize, line_limit: usize) -> Vec<
             let mut greentext = false;
             let mut reply = false;
 
-            let mut j = 0;
-            for char in line.chars() {
+            for (j, char) in line.chars().enumerate() {
                 if j == 0 && char == '>' {
                     greentext = true;
                 }
@@ -126,8 +127,6 @@ fn format_post_contents(string: &str, sub_len: usize, line_limit: usize) -> Vec<
                     greentext = false;
                     break;
                 }
-
-                j += 1;
             }
 
             let mut len = 0;

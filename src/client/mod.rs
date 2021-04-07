@@ -33,11 +33,7 @@ impl ChanClient {
         Ok(boards_response.boards)
     }
 
-    pub async fn get_threads(
-        &self,
-        board: &str,
-        page: u8,
-    ) -> Result<Vec<Thread>, Box<dyn Error>> {
+    pub async fn get_threads(&self, board: &str, page: u8) -> Result<Vec<Thread>, Box<dyn Error>> {
         let threads_response: ThreadListResponse = self
             .client
             .get(&self.api.threads(board, page))

@@ -1,3 +1,5 @@
+#![allow(clippy::single_match)]
+
 use std::{env, io, process, str};
 
 use clipboard::{ClipboardContext, ClipboardProvider};
@@ -8,15 +10,15 @@ use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    Terminal,
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    Terminal,
 };
 
 use client::ChanClient;
 
 use crate::app::{App, Event, Events};
-use crate::client::api::{ChanApi, from_name};
+use crate::client::api::{from_name, ChanApi};
 use crate::formatter::{format_default, format_post};
 use crate::model::{Board, Thread, ThreadList, ThreadPost};
 use crate::view::{SelectedField, StyleProvider};
@@ -243,7 +245,8 @@ fn main() -> Result<(), io::Error> {
                         SelectedField::BoardList => {
                             ctx.set_contents(api.url_board(
                                 &app.boards.items[app.boards.state.selected().unwrap()].board,
-                            )).expect("Clipboard error.");
+                            ))
+                            .expect("Clipboard error.");
                         }
                         SelectedField::ThreadList => {
                             ctx.set_contents(
@@ -255,7 +258,8 @@ fn main() -> Result<(), io::Error> {
                                         .unwrap()
                                         .no as u64,
                                 ),
-                            ).expect("Clipboard error.");
+                            )
+                            .expect("Clipboard error.");
                         }
                         SelectedField::Thread => {
                             ctx.set_contents(
@@ -269,7 +273,8 @@ fn main() -> Result<(), io::Error> {
                                     app.thread.items[app.thread.state.selected().unwrap()].no
                                         as u64,
                                 ),
-                            ).expect("Clipboard error.");
+                            )
+                            .expect("Clipboard error.");
                         }
                     };
                 }
@@ -290,7 +295,8 @@ fn main() -> Result<(), io::Error> {
                                         post.tim.as_ref().unwrap(),
                                         post.ext.as_ref().unwrap()
                                     ),
-                                )).expect("Clipboard error.");
+                                ))
+                                .expect("Clipboard error.");
                             }
                         }
                         SelectedField::Thread => {
@@ -304,7 +310,8 @@ fn main() -> Result<(), io::Error> {
                                         post.tim.as_ref().unwrap(),
                                         post.ext.as_ref().unwrap()
                                     ),
-                                )).expect("Clipboard error.");
+                                ))
+                                .expect("Clipboard error.");
                             }
                         }
                     };

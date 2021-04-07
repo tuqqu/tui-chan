@@ -21,13 +21,10 @@ Make sure you have [Rust][rust-installation-url] installed.
 ```shell
 git clone https://github.com/tuqqu/tui-chan.git
 cd tui-chan
-cargo build --release
-make install # it will copy the binary to your /usr/local/bin
-```
+cargo install --path . # copies binary to /.cargo/bin/
 
-To uninstall the app just run
-```shell
-make uninstall
+# to uninstall run
+cargo uninstall
 ```
 
 ## Controls
@@ -43,7 +40,7 @@ Use `d` or `->` to open board or thread and `a` or `<-` to return to the previou
 | Paginate threads | `p` |
 | Toggle fullscreen for the selected panel | `z` |
 | Copy the direct url to the selected thread or post | `c` |
-| Copy the selected post media url | control + `c` |
+| Copy the selected post media (image/webm) url | control + `c` |
 | Quit | `q` |
 
 [latest-releases]: https://github.com/tuqqu/tui-chan/releases

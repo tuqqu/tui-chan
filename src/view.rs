@@ -1,7 +1,4 @@
-use tui::{
-    style::Color,
-    widgets::BorderType,
-};
+use tui::{style::Color, widgets::BorderType};
 
 pub struct StyleProvider {
     highlight_color: Color,
@@ -75,8 +72,16 @@ impl BlockStyle {
         default_border_color: Color,
     ) -> Self {
         Self::new(
-            BlockBorderColor::from_selected_field(selected_field, highlight_border_color, default_border_color),
-            BlockBorderType::from_selected_field(selected_field, highlight_border_type, default_border_type),
+            BlockBorderColor::from_selected_field(
+                selected_field,
+                highlight_border_color,
+                default_border_color,
+            ),
+            BlockBorderType::from_selected_field(
+                selected_field,
+                highlight_border_type,
+                default_border_type,
+            ),
         )
     }
 
@@ -103,15 +108,9 @@ impl BlockBorderColor {
         default_color: Color,
     ) -> Self {
         match selected_field {
-            SelectedField::BoardList => {
-                Self::new(highlight_color, default_color, default_color)
-            }
-            SelectedField::ThreadList => {
-                Self::new(default_color, highlight_color, default_color)
-            }
-            SelectedField::Thread => {
-                Self::new(default_color, default_color, highlight_color)
-            }
+            SelectedField::BoardList => Self::new(highlight_color, default_color, default_color),
+            SelectedField::ThreadList => Self::new(default_color, highlight_color, default_color),
+            SelectedField::Thread => Self::new(default_color, default_color, highlight_color),
         }
     }
 }
@@ -131,15 +130,11 @@ impl BlockBorderType {
         default_border: BorderType,
     ) -> Self {
         match selected_field {
-            SelectedField::BoardList => {
-                Self::new(highlight_border, default_border, default_border)
-            }
+            SelectedField::BoardList => Self::new(highlight_border, default_border, default_border),
             SelectedField::ThreadList => {
                 Self::new(default_border, highlight_border, default_border)
             }
-            SelectedField::Thread => {
-                Self::new(default_border, default_border, highlight_border)
-            }
+            SelectedField::Thread => Self::new(default_border, default_border, highlight_border),
         }
     }
 }

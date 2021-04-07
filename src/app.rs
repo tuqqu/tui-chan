@@ -1,17 +1,14 @@
 use std::{
     io,
     sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering}, mpsc,
+        atomic::{AtomicBool, Ordering},
+        mpsc, Arc,
     },
     thread,
     time::Duration,
 };
 
-use termion::{
-    event::Key,
-    input::TermRead,
-};
+use termion::{event::Key, input::TermRead};
 use tui::widgets::ListState;
 
 use crate::model::{Board, Thread, ThreadPost};

@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 use crate::model::{Board, Thread, ThreadPost};
 
 #[derive(Debug, Serialize, Deserialize)]
