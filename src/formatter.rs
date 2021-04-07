@@ -171,3 +171,45 @@ fn format_time(timestamp: u64) -> String {
 
     datetime.format("%m/%d/%y(%a)%H:%M:%S").to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_time() {
+        assert_eq!(format_time(1617810439), "04/07/21(Wed)15:47:19");
+        assert_eq!(format_time(1717810439), "06/08/24(Sat)01:33:59");
+    }
+
+    #[test]
+    fn test_format_default() {
+        assert_eq!(format_default("string"), " string");
+    }
+
+    #[test]
+    fn test_format_post_contents() {
+        const POST: &str = "Natus est Schubert Himmelpfortgrund in vico Alsergrund Vindobonae die 31 Ianuarii 1797. Pater, Franciscus Theodorus Schubert, filius pagani Moraviani, magister scholae paroechialis; mater, Elisabeth (Vietz), filia artificis claustrarii Silesici fuit, quae ante nuptias ut ancilla in familia Vindobonensi laboraverat.";
+
+        // untruncated post formatting
+        assert_eq!(format_post_contents(POST, 100, 5), vec![
+            Spans::from(" Natus est Schubert Himmelpfortgrund in vico Alsergrund Vindobonae die 31 Ianuarii 1797. Pater, Franc"),
+            Spans::from(" iscus Theodorus Schubert, filius pagani Moraviani, magister scholae paroechialis; mater, Elisabeth ("),
+            Spans::from(" Vietz), filia artificis claustrarii Silesici fuit, quae ante nuptias ut ancilla in familia Vindobone"),
+            Spans::from(" nsi laboraverat."),
+        ]);
+
+        // truncated post formatting
+        assert_eq!(
+            format_post_contents(POST, 50, 2),
+            vec![
+                Spans::from(" Natus est Schubert Himmelpfortgrund in vico Alserg"),
+                Spans::from(" rund Vindobonae die 31 Ianuarii 1797. Pater, Franc"),
+                Spans::from(vec![
+                    Span::from(" iscus Theodorus Schubert, filius pagani Morav"),
+                    Span::styled("[...]", Style::default().fg(Color::Magenta))
+                ]),
+            ]
+        );
+    }
+}
