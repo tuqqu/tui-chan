@@ -8,11 +8,11 @@ use voca_rs::strip;
 
 use crate::model::ThreadPost;
 
-pub fn format_default(str: &str) -> String {
+pub(crate) fn format_default(str: &str) -> String {
     format!(" {}", str)
 }
 
-pub fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
+pub(crate) fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
     let mut lines = vec![Spans::from("")];
     let mut header: Vec<Span> = vec![];
 
@@ -22,13 +22,14 @@ pub fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ));
     }
+
     header.push(Span::raw(" "));
     header.push(Span::styled(
         format!(
             "{} {} No.{}",
             htmlescape::decode_html(post.name()).unwrap(),
             format_time(post.time()),
-            post.no()
+            post.no(),
         ),
         Style::default().add_modifier(Modifier::ITALIC | Modifier::UNDERLINED),
     ));
@@ -58,7 +59,7 @@ pub fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
                 post.ext().as_ref().unwrap()
             )),
             Style::default()
-                .fg(Color::Yellow)
+                .fg(Color::Cyan)
                 .add_modifier(Modifier::ITALIC),
         )));
     }

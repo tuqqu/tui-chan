@@ -4,13 +4,9 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct Board {
     board: String,
     title: String,
-    #[allow(dead_code)]
     meta_description: String,
-    #[allow(dead_code)]
     per_page: isize,
-    #[allow(dead_code)]
     pages: isize,
-    #[allow(dead_code)]
     bump_limit: isize,
 }
 
@@ -21,6 +17,26 @@ impl Board {
 
     pub(crate) fn title(&self) -> &str {
         &self.title
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn meta_description(&self) -> &str {
+        &self.meta_description
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn per_page(&self) -> isize {
+        self.per_page
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn pages(&self) -> isize {
+        self.pages
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn bump_limit(&self) -> isize {
+        self.bump_limit
     }
 }
 
@@ -65,12 +81,10 @@ impl Thread {
 pub struct ThreadPost {
     #[serde(default)]
     no: usize,
-    #[allow(dead_code)]
     #[serde(default)]
     now: String,
     #[serde(default)]
     time: u64,
-    #[allow(dead_code)]
     #[serde(default)]
     id: String,
     #[serde(default)]
@@ -136,5 +150,15 @@ impl ThreadPost {
 
     pub(crate) fn tim(&self) -> Option<u64> {
         self.tim
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn now(&self) -> &str {
+        &self.now
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn id(&self) -> &str {
+        &self.id
     }
 }

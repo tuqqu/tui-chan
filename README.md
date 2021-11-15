@@ -29,7 +29,7 @@ cargo uninstall
 
 ## Controls
 
-At any time you can press `h` to show / hide help bar to look up controls.
+Press `h` to show / hide help bar to look up controls.
 Use `d` or `->` to open board or thread and `a` or `<-` to return to the previous panel.
 
 | Description | Keys |
@@ -41,6 +41,8 @@ Use `d` or `->` to open board or thread and `a` or `<-` to return to the previou
 | Toggle fullscreen for the selected panel | `z` |
 | Copy the direct url to the selected thread or post | `c` |
 | Copy the selected post media (image/webm) url | control + `c` |
+| Open the selected thread or post in browser | `o` |
+| Open the selected post media (image/webm) in browser | control + `o` |
 | Quit | `q` |
 
 [latest-releases]: https://github.com/tuqqu/tui-chan/releases
