@@ -1,6 +1,6 @@
 # tui-chan
 An Imageboard Terminal User Interface.
-Currently supports 4chan only.
+Currently supports only 4chan.
 
 ![demo](docs/demo.gif)
 

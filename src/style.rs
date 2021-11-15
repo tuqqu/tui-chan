@@ -1,6 +1,7 @@
-use tui::{style::Color, widgets::BorderType};
+use tui::style::Color;
+use tui::widgets::BorderType;
 
-pub struct StyleProvider {
+pub(crate) struct StyleProvider {
     highlight_color: Color,
     default_color: Color,
     highlight_border_type: BorderType,
@@ -10,9 +11,9 @@ pub struct StyleProvider {
 }
 
 impl StyleProvider {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            highlight_color: Color::DarkGray, //todo try from color
+            highlight_color: Color::DarkGray,
             default_color: Color::Reset,
             highlight_border_type: BorderType::Plain,
             default_border_type: BorderType::Plain,
@@ -21,9 +22,9 @@ impl StyleProvider {
         }
     }
 
-    pub fn default_from_selected_field(&self, selected_field: &SelectedField) -> BlockStyle {
+    pub(crate) fn default_from_selected_field(&self, selected_field: &SelectedField) -> BlockStyle {
         BlockStyle::from_selected_field(
-            &selected_field,
+            selected_field,
             self.highlight_color,
             self.default_color,
             self.highlight_border_type,
@@ -33,36 +34,106 @@ impl StyleProvider {
         )
     }
 
-    pub fn highlight_color(&self) -> &Color {
+    pub(crate) fn highlight_color(&self) -> &Color {
         &self.highlight_color
     }
 }
 
-pub enum SelectedField {
+pub(crate) enum SelectedField {
     BoardList,
     ThreadList,
     Thread,
 }
 
-pub struct BlockBorderColor {
-    pub board_list: Color,
-    pub thread_list: Color,
-    pub thread: Color,
+pub(crate) struct BlockBorderColor {
+    board_list: Color,
+    thread_list: Color,
+    thread: Color,
 }
 
-pub struct BlockBorderType {
-    pub board_list: BorderType,
-    pub thread_list: BorderType,
-    pub thread: BorderType,
+impl BlockBorderColor {
+    fn new(board_list: Color, thread_list: Color, thread: Color) -> Self {
+        Self {
+            board_list,
+            thread_list,
+            thread,
+        }
+    }
+
+    fn from_selected_field(
+        selected_field: &SelectedField,
+        highlight_color: Color,
+        default_color: Color,
+    ) -> Self {
+        match selected_field {
+            SelectedField::BoardList => Self::new(highlight_color, default_color, default_color),
+            SelectedField::ThreadList => Self::new(default_color, highlight_color, default_color),
+            SelectedField::Thread => Self::new(default_color, default_color, highlight_color),
+        }
+    }
+
+    pub(crate) fn board_list(&self) -> Color {
+        self.board_list
+    }
+
+    pub(crate) fn thread_list(&self) -> Color {
+        self.thread_list
+    }
+
+    pub(crate) fn thread(&self) -> Color {
+        self.thread
+    }
 }
 
-pub struct BlockStyle {
-    pub border_color: BlockBorderColor,
-    pub border_type: BlockBorderType,
+pub(crate) struct BlockBorderType {
+    board_list: BorderType,
+    thread_list: BorderType,
+    thread: BorderType,
+}
+
+impl BlockBorderType {
+    fn new(board_list: BorderType, thread_list: BorderType, thread: BorderType) -> Self {
+        Self {
+            board_list,
+            thread_list,
+            thread,
+        }
+    }
+
+    fn from_selected_field(
+        selected_field: &SelectedField,
+        highlight_border: BorderType,
+        default_border: BorderType,
+    ) -> Self {
+        match selected_field {
+            SelectedField::BoardList => Self::new(highlight_border, default_border, default_border),
+            SelectedField::ThreadList => {
+                Self::new(default_border, highlight_border, default_border)
+            }
+            SelectedField::Thread => Self::new(default_border, default_border, highlight_border),
+        }
+    }
+
+    pub(crate) fn board_list(&self) -> BorderType {
+        self.board_list
+    }
+
+    pub(crate) fn thread_list(&self) -> BorderType {
+        self.thread_list
+    }
+
+    pub(crate) fn thread(&self) -> BorderType {
+        self.thread
+    }
+}
+
+pub(crate) struct BlockStyle {
+    border_color: BlockBorderColor,
+    border_type: BlockBorderType,
 }
 
 impl BlockStyle {
-    pub fn from_selected_field(
+    pub(crate) fn from_selected_field(
         selected_field: &SelectedField,
         _highlight_color: Color,
         _default_color: Color,
@@ -91,50 +162,12 @@ impl BlockStyle {
             border_type,
         }
     }
-}
 
-impl BlockBorderColor {
-    fn new(board_list: Color, thread_list: Color, thread: Color) -> Self {
-        Self {
-            board_list,
-            thread_list,
-            thread,
-        }
+    pub(crate) fn border_color(&self) -> &BlockBorderColor {
+        &self.border_color
     }
 
-    fn from_selected_field(
-        selected_field: &SelectedField,
-        highlight_color: Color,
-        default_color: Color,
-    ) -> Self {
-        match selected_field {
-            SelectedField::BoardList => Self::new(highlight_color, default_color, default_color),
-            SelectedField::ThreadList => Self::new(default_color, highlight_color, default_color),
-            SelectedField::Thread => Self::new(default_color, default_color, highlight_color),
-        }
-    }
-}
-
-impl BlockBorderType {
-    fn new(board_list: BorderType, thread_list: BorderType, thread: BorderType) -> Self {
-        Self {
-            board_list,
-            thread_list,
-            thread,
-        }
-    }
-
-    fn from_selected_field(
-        selected_field: &SelectedField,
-        highlight_border: BorderType,
-        default_border: BorderType,
-    ) -> Self {
-        match selected_field {
-            SelectedField::BoardList => Self::new(highlight_border, default_border, default_border),
-            SelectedField::ThreadList => {
-                Self::new(default_border, highlight_border, default_border)
-            }
-            SelectedField::Thread => Self::new(default_border, default_border, highlight_border),
-        }
+    pub(crate) fn border_type(&self) -> &BlockBorderType {
+        &self.border_type
     }
 }

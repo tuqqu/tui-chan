@@ -1,20 +1,16 @@
-use std::{
-    io,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
-    },
-    thread,
-    time::Duration,
-};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Arc};
+use std::time::Duration;
+use std::{io, thread};
 
-use termion::{event::Key, input::TermRead};
+use termion::event::Key;
+use termion::input::TermRead;
 use tui::widgets::ListState;
 
 use crate::model::{Board, Thread, ThreadPost};
-use crate::view::SelectedField;
+use crate::style::SelectedField;
 
-pub struct App {
+pub(crate) struct App {
     pub boards: ItemLIst<Board>,
     pub threads: ItemLIst<Thread>,
     pub thread: ItemLIst<ThreadPost>,
@@ -23,7 +19,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(boards: Vec<Board>, threads: Vec<Thread>, thread: Vec<ThreadPost>) -> Self {
+    pub(crate) fn new(boards: Vec<Board>, threads: Vec<Thread>, thread: Vec<ThreadPost>) -> Self {
         Self {
             boards: ItemLIst::new(boards),
             threads: ItemLIst::new(threads),
@@ -40,8 +36,8 @@ impl App {
                 move around:               w,a,s,d or arrows     toggle help bar:            h
                 move quickly:              CTRL + w,a,s,d        paginate threads:           p
                 toggle fullscreen:         z                     quit:                       q
-                copy selected item url:    c
-                copy item media url:       CTRL + c
+                copy thread/post url:      c
+                copy media url:            CTRL + c
 
                 Note: to enter the board/thread use "d" or "->" key.
                 "##,
@@ -49,17 +45,17 @@ impl App {
         }
     }
 
-    pub fn fill_threads(&mut self, threads: Vec<Thread>) {
+    pub(crate) fn fill_threads(&mut self, threads: Vec<Thread>) {
         self.threads = ItemLIst::new(threads);
     }
 
-    pub fn fill_thread(&mut self, thread: Vec<ThreadPost>) {
+    pub(crate) fn fill_thread(&mut self, thread: Vec<ThreadPost>) {
         self.thread = ItemLIst::new(thread);
     }
 
-    pub fn advance_idly(&self) {}
+    pub(crate) fn advance_idly(&self) {}
 
-    pub fn advance(&mut self, selected_field: &SelectedField, steps: isize) {
+    pub(crate) fn advance(&mut self, selected_field: &SelectedField, steps: isize) {
         match selected_field {
             SelectedField::BoardList => {
                 self.boards.advance_by(steps);
@@ -73,7 +69,7 @@ impl App {
         };
     }
 
-    pub fn calc_screen_share(&self) -> ScreenShare {
+    pub(crate) fn calc_screen_share(&self) -> ScreenShare {
         match (
             self.shown_state.board_list,
             self.shown_state.thread_list,
@@ -81,7 +77,7 @@ impl App {
         ) {
             (true, false, false) => ScreenShare::new(100, 0, 0),
             (true, true, false) => ScreenShare::new(12, 88, 0),
-            (true, true, true) => ScreenShare::new(12, 88, 50), // todo? why it is not the case
+            (true, true, true) => ScreenShare::new(12, 88, 50), // check
             (false, true, true) => ScreenShare::new(12, 34, 54),
             (false, false, true) => ScreenShare::new(0, 0, 100),
             (false, true, false) => ScreenShare::new(0, 100, 0),
@@ -193,15 +189,13 @@ impl Events {
             let ignore_exit_key = ignore_exit_key.clone();
             thread::spawn(move || {
                 let stdin = io::stdin();
-                for evt in stdin.keys() {
-                    if let Ok(key) = evt {
-                        if let Err(err) = tx.send(Event::Input(key)) {
-                            eprintln!("{}", err);
-                            return;
-                        }
-                        if !ignore_exit_key.load(Ordering::Relaxed) && key == config.exit_key {
-                            return;
-                        }
+                for key in stdin.keys().flatten() {
+                    if let Err(err) = tx.send(Event::Input(key)) {
+                        eprintln!("{}", err);
+                        return;
+                    }
+                    if !ignore_exit_key.load(Ordering::Relaxed) && key == config.exit_key {
+                        return;
                     }
                 }
             })

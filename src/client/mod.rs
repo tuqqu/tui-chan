@@ -2,26 +2,24 @@ use std::error::Error;
 
 use reqwest::Client;
 
-use crate::{
-    client::api::ChanApi,
-    client::response::{BoardListResponse, ThreadListResponse, ThreadResponse},
-    model::{Board, Thread, ThreadPost},
-};
+use crate::client::api::ApiUrlProvider;
+use crate::client::response::{BoardListResponse, ThreadListResponse, ThreadResponse};
+use crate::model::{Board, Thread, ThreadPost};
 
-pub mod api;
+pub(crate) mod api;
 mod response;
 
-pub struct ChanClient {
+pub(crate) struct ChanClient {
     client: Client,
-    api: &'static dyn ChanApi,
+    api: &'static dyn ApiUrlProvider,
 }
 
 impl ChanClient {
-    pub fn new(client: Client, api: &'static dyn ChanApi) -> Self {
+    pub(crate) fn new(client: Client, api: &'static dyn ApiUrlProvider) -> Self {
         Self { api, client }
     }
 
-    pub async fn get_boards(&self) -> Result<Vec<Board>, Box<dyn Error>> {
+    pub(crate) async fn get_boards(&self) -> Result<Vec<Board>, Box<dyn Error>> {
         let boards_response: BoardListResponse = self
             .client
             .get(&self.api.boards())
@@ -33,7 +31,11 @@ impl ChanClient {
         Ok(boards_response.boards)
     }
 
-    pub async fn get_threads(&self, board: &str, page: u8) -> Result<Vec<Thread>, Box<dyn Error>> {
+    pub(crate) async fn get_threads(
+        &self,
+        board: &str,
+        page: u8,
+    ) -> Result<Vec<Thread>, Box<dyn Error>> {
         let threads_response: ThreadListResponse = self
             .client
             .get(&self.api.threads(board, page))
@@ -45,7 +47,7 @@ impl ChanClient {
         Ok(threads_response.threads)
     }
 
-    pub async fn get_thread(
+    pub(crate) async fn get_thread(
         &self,
         board: &str,
         no: u64,

@@ -2,32 +2,34 @@
 
 use std::{env, io, process, str};
 
+use client::ChanClient;
 use clipboard::{ClipboardContext, ClipboardProvider};
 use reqwest::Client;
-use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use termion::event::Key;
+use termion::input::MouseTerminal;
+use termion::raw::IntoRawMode;
+use termion::screen::AlternateScreen;
 use tokio::runtime::Runtime;
-use tui::{
-    backend::TermionBackend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
-    Terminal,
-};
-
-use client::ChanClient;
+use tui::backend::TermionBackend;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, List, ListItem, Paragraph, Wrap};
+use tui::Terminal;
 
 use crate::app::{App, Event, Events};
-use crate::client::api::{from_name, ChanApi};
-use crate::formatter::{format_default, format_post};
+use crate::client::api::{
+    from_name as channel_provider_from_name, ChannelProvider, ContentUrlProvider,
+};
+use crate::format::{format_default, format_post};
 use crate::model::{Board, Thread, ThreadList, ThreadPost};
-use crate::view::{SelectedField, StyleProvider};
+use crate::style::{SelectedField, StyleProvider};
 
 mod app;
 mod client;
-mod formatter;
+mod format;
 mod model;
-mod view;
+mod style;
 
 fn main() -> Result<(), io::Error> {
     let stdout = io::stdout().into_raw_mode()?;
@@ -40,7 +42,7 @@ fn main() -> Result<(), io::Error> {
     let args: Vec<String> = env::args().collect();
     let chan: &str = if args.len() == 1 { "default" } else { &args[1] };
 
-    let api: &dyn ChanApi = match from_name(chan) {
+    let api: &dyn ChannelProvider = match channel_provider_from_name(chan) {
         Some(api) => api,
         None => {
             println!("Imageboard name \"{}\" is not valid.", chan);
@@ -48,8 +50,9 @@ fn main() -> Result<(), io::Error> {
         }
     };
 
-    let client = ChanClient::new(Client::new(), api);
+    let client = ChanClient::new(Client::new(), api.as_api());
     let events = Events::new();
+    let api: &dyn ContentUrlProvider = api.as_content();
 
     let mut boards: Vec<Board> = vec![];
     runtime.block_on(async {
@@ -109,10 +112,10 @@ fn main() -> Result<(), io::Error> {
                 .map(|board| {
                     let lines = vec![Spans::from(vec![
                         Span::styled(
-                            format_default(&format!("/{}/", board.board)),
+                            format_default(&format!("/{}/", board.board())),
                             Style::default().fg(Color::Magenta),
                         ),
-                        Span::raw(format_default(&board.title)),
+                        Span::raw(format_default(board.title())),
                     ])];
 
                     ListItem::new(lines).style(Style::default())
@@ -123,8 +126,8 @@ fn main() -> Result<(), io::Error> {
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .border_style(Style::default().fg(block_style.border_color.board_list))
-                        .border_type(block_style.border_type.board_list)
+                        .border_style(Style::default().fg(block_style.border_color().board_list()))
+                        .border_type(block_style.border_type().board_list())
                         .title(format_default("Boards ")),
                 )
                 .highlight_style(
@@ -140,7 +143,7 @@ fn main() -> Result<(), io::Error> {
                 .items
                 .iter()
                 .map(|thread| {
-                    let post = thread.posts.first().unwrap();
+                    let post = thread.posts().first().unwrap();
                     format_post(post, 0, true)
                 })
                 .collect();
@@ -149,8 +152,8 @@ fn main() -> Result<(), io::Error> {
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .border_style(Style::default().fg(block_style.border_color.thread_list))
-                        .border_type(block_style.border_type.thread_list)
+                        .border_style(Style::default().fg(block_style.border_color().thread_list()))
+                        .border_type(block_style.border_type().thread_list())
                         .title(format_default(&format!(
                             "Threads, page {} ",
                             thread_list.cur_page()
@@ -171,8 +174,8 @@ fn main() -> Result<(), io::Error> {
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .border_style(Style::default().fg(block_style.border_color.thread))
-                        .border_type(block_style.border_type.thread)
+                        .border_style(Style::default().fg(block_style.border_color().thread()))
+                        .border_type(block_style.border_type().thread())
                         .title(format_default("Thread ")),
                 )
                 .highlight_style(Style::default().bg(*style_prov.highlight_color()));
@@ -244,19 +247,19 @@ fn main() -> Result<(), io::Error> {
                     match selected_field {
                         SelectedField::BoardList => {
                             ctx.set_contents(api.url_board(
-                                &app.boards.items[app.boards.state.selected().unwrap()].board,
+                                app.boards.items[app.boards.state.selected().unwrap()].board(),
                             ))
                             .expect("Clipboard error.");
                         }
                         SelectedField::ThreadList => {
                             ctx.set_contents(
                                 api.url_thread(
-                                    &app.boards.items[app.boards.state.selected().unwrap()].board,
+                                    app.boards.items[app.boards.state.selected().unwrap()].board(),
                                     app.threads.items[app.threads.state.selected().unwrap()]
-                                        .posts
+                                        .posts()
                                         .first()
                                         .unwrap()
-                                        .no as u64,
+                                        .no() as u64,
                                 ),
                             )
                             .expect("Clipboard error.");
@@ -264,13 +267,13 @@ fn main() -> Result<(), io::Error> {
                         SelectedField::Thread => {
                             ctx.set_contents(
                                 api.url_thread_post(
-                                    &app.boards.items[app.boards.state.selected().unwrap()].board,
+                                    app.boards.items[app.boards.state.selected().unwrap()].board(),
                                     app.threads.items[app.threads.state.selected().unwrap()]
-                                        .posts
+                                        .posts()
                                         .first()
                                         .unwrap()
-                                        .no as u64,
-                                    app.thread.items[app.thread.state.selected().unwrap()].no
+                                        .no() as u64,
+                                    app.thread.items[app.thread.state.selected().unwrap()].no()
                                         as u64,
                                 ),
                             )
@@ -279,40 +282,39 @@ fn main() -> Result<(), io::Error> {
                     };
                 }
                 Key::Ctrl('c') => {
+                    fn set_media_url(
+                        ctx: &mut ClipboardContext,
+                        post: &ThreadPost,
+                        app: &App,
+                        api: &dyn ContentUrlProvider,
+                    ) {
+                        if post.tim().is_none() || post.ext().is_none() {
+                            return;
+                        }
+
+                        ctx.set_contents(api.url_file(
+                            app.boards.items[app.boards.state.selected().unwrap()].board(),
+                            format!(
+                                "{}{}",
+                                post.tim().as_ref().unwrap(),
+                                post.ext().as_ref().unwrap()
+                            ),
+                        ))
+                        .expect("Clipboard error.");
+                    }
+
                     match selected_field {
                         SelectedField::BoardList => {}
                         SelectedField::ThreadList => {
-                            let post = &app.threads.items[app.threads.state.selected().unwrap()]
-                                .posts
+                            let post = app.threads.items[app.threads.state.selected().unwrap()]
+                                .posts()
                                 .first()
                                 .unwrap();
-
-                            if post.tim.is_some() && post.ext.is_some() {
-                                ctx.set_contents(api.url_file(
-                                    &app.boards.items[app.boards.state.selected().unwrap()].board,
-                                    format!(
-                                        "{}{}",
-                                        post.tim.as_ref().unwrap(),
-                                        post.ext.as_ref().unwrap()
-                                    ),
-                                ))
-                                .expect("Clipboard error.");
-                            }
+                            set_media_url(&mut ctx, post, &app, api);
                         }
                         SelectedField::Thread => {
                             let post = &app.thread.items[app.thread.state.selected().unwrap()];
-
-                            if post.tim.is_some() && post.ext.is_some() {
-                                ctx.set_contents(api.url_file(
-                                    &app.boards.items[app.boards.state.selected().unwrap()].board,
-                                    format!(
-                                        "{}{}",
-                                        post.tim.as_ref().unwrap(),
-                                        post.ext.as_ref().unwrap()
-                                    ),
-                                ))
-                                .expect("Clipboard error.");
-                            }
+                            set_media_url(&mut ctx, post, &app, api);
                         }
                     };
                 }
@@ -323,8 +325,8 @@ fn main() -> Result<(), io::Error> {
                             runtime.block_on(async {
                                 let result = client
                                     .get_threads(
-                                        &app.boards.items[app.boards.state.selected().unwrap()]
-                                            .board,
+                                        app.boards.items[app.boards.state.selected().unwrap()]
+                                            .board(),
                                         thread_list.next_page(),
                                     )
                                     .await;
@@ -346,8 +348,8 @@ fn main() -> Result<(), io::Error> {
                             runtime.block_on(async {
                                 let result = client
                                     .get_threads(
-                                        &app.boards.items[app.boards.state.selected().unwrap()]
-                                            .board,
+                                        app.boards.items[app.boards.state.selected().unwrap()]
+                                            .board(),
                                         thread_list.prev_page(),
                                     )
                                     .await;
@@ -373,8 +375,8 @@ fn main() -> Result<(), io::Error> {
                             runtime.block_on(async {
                                 let result = client
                                     .get_threads(
-                                        &app.boards.items[app.boards.state.selected().unwrap()]
-                                            .board,
+                                        app.boards.items[app.boards.state.selected().unwrap()]
+                                            .board(),
                                         thread_list.cur_page(),
                                     )
                                     .await;
@@ -396,13 +398,13 @@ fn main() -> Result<(), io::Error> {
                             runtime.block_on(async {
                                 let result = client
                                     .get_thread(
-                                        &app.boards.items[app.boards.state.selected().unwrap()]
-                                            .board,
+                                        app.boards.items[app.boards.state.selected().unwrap()]
+                                            .board(),
                                         app.threads.items[app.threads.state.selected().unwrap()]
-                                            .posts
+                                            .posts()
                                             .first()
                                             .unwrap()
-                                            .no as u64,
+                                            .no() as u64,
                                     )
                                     .await;
                                 match result {
