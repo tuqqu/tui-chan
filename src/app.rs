@@ -1,21 +1,15 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{mpsc, Arc};
-use std::time::Duration;
-use std::{io, thread};
-
-use termion::event::Key;
-use termion::input::TermRead;
 use tui::widgets::ListState;
 
+use crate::client::api::ContentUrlProvider;
 use crate::model::{Board, Thread, ThreadPost};
 use crate::style::SelectedField;
 
 pub(crate) struct App {
-    pub boards: ItemLIst<Board>,
-    pub threads: ItemLIst<Thread>,
-    pub thread: ItemLIst<ThreadPost>,
-    pub shown_state: ShownState,
-    pub help_bar: HelpBar,
+    pub(crate) boards: ItemLIst<Board>,
+    pub(crate) threads: ItemLIst<Thread>,
+    pub(crate) thread: ItemLIst<ThreadPost>,
+    shown_state: ShownState,
+    help_bar: HelpBar,
 }
 
 impl App {
@@ -33,11 +27,11 @@ impl App {
                 shown: false,
                 title: "Help (\"h\" to toggle)",
                 text: r##"
-                move around:               w,a,s,d or arrows     toggle help bar:            h
-                move quickly:              CTRL + w,a,s,d        paginate threads:           p
-                toggle fullscreen:         z                     quit:                       q
-                copy thread/post url:      c
-                copy media url:            CTRL + c
+                move around:            w,a,s,d or arrows    toggle help bar:              h
+                move quickly:           CTRL + w,a,s,d       copy thread/post url:         c
+                toggle fullscreen:      z                    copy media url:               CTRL + c
+                paginate threads:       p                    open thread/post in browser   o
+                quit:                   q                    open media url in browser     CTRL + o
 
                 Note: to enter the board/thread use "d" or "->" key.
                 "##,
@@ -84,12 +78,124 @@ impl App {
             _ => ScreenShare::new(100, 0, 0),
         }
     }
+
+    pub(crate) fn selected_board(&self) -> &Board {
+        &self.boards.items[self.boards.state.selected().unwrap()]
+    }
+
+    pub(crate) fn selected_thread(&self) -> &Thread {
+        &self.threads.items[self.threads.state.selected().unwrap()]
+    }
+
+    pub(crate) fn selected_post(&self) -> &ThreadPost {
+        &self.thread.items[self.thread.state.selected().unwrap()]
+    }
+
+    pub(crate) fn set_shown_board_list(&mut self, shown: bool) {
+        self.shown_state.board_list = shown;
+    }
+
+    pub(crate) fn set_shown_thread_list(&mut self, shown: bool) {
+        self.shown_state.thread_list = shown;
+    }
+
+    pub(crate) fn set_shown_thread(&mut self, shown: bool) {
+        self.shown_state.thread = shown;
+    }
+
+    pub(crate) fn toggle_shown_board_list(&mut self) {
+        self.shown_state.board_list ^= true;
+    }
+
+    pub(crate) fn toggle_shown_thread_list(&mut self) {
+        self.shown_state.thread_list ^= true;
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn toggle_shown_thread(&mut self) {
+        self.shown_state.thread ^= true;
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn shown_board_list(&mut self) -> bool {
+        self.shown_state.board_list
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn shown_thread_list(&mut self) -> bool {
+        self.shown_state.thread_list
+    }
+
+    pub(crate) fn shown_thread(&mut self) -> bool {
+        self.shown_state.thread
+    }
+
+    pub(crate) fn help_bar(&self) -> &HelpBar {
+        &self.help_bar
+    }
+
+    pub(crate) fn help_bar_mut(&mut self) -> &mut HelpBar {
+        &mut self.help_bar
+    }
+
+    pub(crate) fn url_boards(&self, url_provider: &dyn ContentUrlProvider) -> String {
+        url_provider.url_board(self.selected_board().board())
+    }
+
+    pub(crate) fn url_threads(&self, url_provider: &dyn ContentUrlProvider) -> String {
+        url_provider.url_thread(
+            self.selected_board().board(),
+            self.selected_thread().posts().first().unwrap().no() as u64,
+        )
+    }
+
+    pub(crate) fn url_thread(&self, url_provider: &dyn ContentUrlProvider) -> String {
+        url_provider.url_thread_post(
+            self.selected_board().board(),
+            self.selected_thread().posts().first().unwrap().no() as u64,
+            self.selected_post().no() as u64,
+        )
+    }
+
+    pub(crate) fn media_url_threads(
+        &self,
+        url_provider: &dyn ContentUrlProvider,
+    ) -> Option<String> {
+        let post = self.selected_thread().posts().first().unwrap();
+        self.media_url(post, url_provider)
+    }
+
+    pub(crate) fn media_url_thread(&self, url_provider: &dyn ContentUrlProvider) -> Option<String> {
+        let post = self.selected_post();
+        self.media_url(post, url_provider)
+    }
+
+    fn media_url(
+        &self,
+        post: &ThreadPost,
+        url_provider: &dyn ContentUrlProvider,
+    ) -> Option<String> {
+        if post.tim().is_none() || post.ext().is_none() {
+            return None;
+        }
+
+        let url = url_provider.url_file(
+            self.selected_board().board(),
+            format!(
+                "{}{}",
+                post.tim().as_ref().unwrap(),
+                post.ext().as_ref().unwrap()
+            ),
+        );
+
+        Some(url)
+    }
 }
 
-pub struct ScreenShare {
-    pub board_list: u16,
-    pub thread_list: u16,
-    pub thread: u16,
+pub(crate) struct ScreenShare {
+    board_list: u16,
+    thread_list: u16,
+    thread: u16,
 }
 
 impl ScreenShare {
@@ -100,34 +206,64 @@ impl ScreenShare {
             thread,
         }
     }
+
+    pub(crate) fn board_list(&self) -> u16 {
+        self.board_list
+    }
+
+    pub(crate) fn thread_list(&self) -> u16 {
+        self.thread_list
+    }
+
+    pub(crate) fn thread(&self) -> u16 {
+        self.thread
+    }
 }
 
-pub struct ShownState {
-    pub board_list: bool,
-    pub thread_list: bool,
-    pub thread: bool,
+struct ShownState {
+    board_list: bool,
+    thread_list: bool,
+    thread: bool,
 }
 
-pub struct ItemLIst<T> {
-    pub state: ListState,
-    pub items: Vec<T>,
+pub(crate) struct ItemLIst<T> {
+    pub(crate) state: ListState,
+    pub(crate) items: Vec<T>,
 }
 
-pub struct HelpBar {
-    pub shown: bool,
-    pub title: &'static str,
-    pub text: &'static str,
+pub(crate) struct HelpBar {
+    shown: bool,
+    title: &'static str,
+    text: &'static str,
+}
+
+impl HelpBar {
+    pub(crate) fn shown(&self) -> bool {
+        self.shown
+    }
+
+    pub(crate) fn toggle_shown(&mut self) {
+        self.shown ^= true;
+    }
+
+    pub(crate) fn title(&self) -> &'static str {
+        self.title
+    }
+
+    pub(crate) fn text(&self) -> &'static str {
+        self.text
+    }
 }
 
 impl<T> ItemLIst<T> {
-    pub fn new(items: Vec<T>) -> ItemLIst<T> {
+    pub(crate) fn new(items: Vec<T>) -> ItemLIst<T> {
         ItemLIst {
             state: ListState::default(),
             items,
         }
     }
 
-    pub fn advance_by(&mut self, steps: isize) {
+    pub(crate) fn advance_by(&mut self, steps: isize) {
         let selected = match self.state.selected() {
             Some(selected) => {
                 if selected as isize >= self.items.len() as isize - steps {
@@ -144,89 +280,7 @@ impl<T> ItemLIst<T> {
         self.state.select(Some(selected as usize));
     }
 
-    pub fn _unselect(&mut self) {
+    pub(crate) fn _unselect(&mut self) {
         self.state.select(None);
-    }
-}
-
-pub struct Events {
-    rx: mpsc::Receiver<Event<Key>>,
-    _input_handle: thread::JoinHandle<()>,
-    _ignore_exit_key: Arc<AtomicBool>,
-    _tick_handle: thread::JoinHandle<()>,
-}
-
-pub enum Event<I> {
-    Input(I),
-    Tick,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Config {
-    pub exit_key: Key,
-    pub tick_rate: Duration,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            exit_key: Key::Char('q'),
-            tick_rate: Duration::from_millis(250),
-        }
-    }
-}
-
-impl Events {
-    pub fn new() -> Events {
-        Events::with_config(Config::default())
-    }
-
-    pub fn with_config(config: Config) -> Events {
-        let (tx, rx) = mpsc::channel();
-        let ignore_exit_key = Arc::new(AtomicBool::new(false));
-        let input_handle = {
-            let tx = tx.clone();
-            let ignore_exit_key = ignore_exit_key.clone();
-            thread::spawn(move || {
-                let stdin = io::stdin();
-                for key in stdin.keys().flatten() {
-                    if let Err(err) = tx.send(Event::Input(key)) {
-                        eprintln!("{}", err);
-                        return;
-                    }
-                    if !ignore_exit_key.load(Ordering::Relaxed) && key == config.exit_key {
-                        return;
-                    }
-                }
-            })
-        };
-
-        let tick_handle = {
-            thread::spawn(move || loop {
-                if tx.send(Event::Tick).is_err() {
-                    break;
-                }
-                thread::sleep(config.tick_rate);
-            })
-        };
-
-        Events {
-            rx,
-            _ignore_exit_key: ignore_exit_key,
-            _input_handle: input_handle,
-            _tick_handle: tick_handle,
-        }
-    }
-
-    pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
-        self.rx.recv()
-    }
-
-    pub fn _disable_exit_key(&mut self) {
-        self._ignore_exit_key.store(true, Ordering::Relaxed);
-    }
-
-    pub fn _enable_exit_key(&mut self) {
-        self._ignore_exit_key.store(false, Ordering::Relaxed);
     }
 }

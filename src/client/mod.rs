@@ -14,12 +14,14 @@ pub(crate) struct ChanClient {
     api: &'static dyn ApiUrlProvider,
 }
 
+type ClientResult<T> = Result<T, Box<dyn Error>>;
+
 impl ChanClient {
     pub(crate) fn new(client: Client, api: &'static dyn ApiUrlProvider) -> Self {
         Self { api, client }
     }
 
-    pub(crate) async fn get_boards(&self) -> Result<Vec<Board>, Box<dyn Error>> {
+    pub(crate) async fn get_boards(&self) -> ClientResult<Vec<Board>> {
         let boards_response: BoardListResponse = self
             .client
             .get(&self.api.boards())
@@ -31,11 +33,7 @@ impl ChanClient {
         Ok(boards_response.boards)
     }
 
-    pub(crate) async fn get_threads(
-        &self,
-        board: &str,
-        page: u8,
-    ) -> Result<Vec<Thread>, Box<dyn Error>> {
+    pub(crate) async fn get_threads(&self, board: &str, page: u8) -> ClientResult<Vec<Thread>> {
         let threads_response: ThreadListResponse = self
             .client
             .get(&self.api.threads(board, page))
@@ -47,11 +45,7 @@ impl ChanClient {
         Ok(threads_response.threads)
     }
 
-    pub(crate) async fn get_thread(
-        &self,
-        board: &str,
-        no: u64,
-    ) -> Result<Vec<ThreadPost>, Box<dyn Error>> {
+    pub(crate) async fn get_thread(&self, board: &str, no: u64) -> ClientResult<Vec<ThreadPost>> {
         let thread_response: ThreadResponse = self
             .client
             .get(&self.api.thread(board, no))
