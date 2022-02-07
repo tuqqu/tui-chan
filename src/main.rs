@@ -181,7 +181,10 @@ fn main() -> Result<(), io::Error> {
                         .borders(Borders::ALL)
                         .border_style(Style::default().fg(block_style.border_color().thread()))
                         .border_type(block_style.border_type().thread())
-                        .title(format_default("Thread ")),
+                        .title(format_default(&format!(
+                            "Thread {}",
+                            app.selected_thread_description()
+                        ))),
                 )
                 .highlight_style(Style::default().bg(*style_prov.highlight_color()));
             f.render_stateful_widget(thread, chunks[2], &mut app.thread.state);

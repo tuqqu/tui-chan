@@ -1,6 +1,7 @@
 use tui::widgets::ListState;
 
 use crate::client::api::ContentUrlProvider;
+use crate::format::format_html;
 use crate::model::{Board, Thread, ThreadPost};
 use crate::style::SelectedField;
 
@@ -90,6 +91,23 @@ impl App {
 
     pub(crate) fn selected_thread(&self) -> &Thread {
         &self.threads.items[self.threads.state.selected().unwrap()]
+    }
+
+    pub(crate) fn selected_thread_description(&self) -> String {
+        if let Some(post_i) = self.threads.state.selected() {
+            let thread = &self.threads.items[post_i];
+            let post = thread.posts().first().unwrap();
+            let title = format_html(post.sub());
+            let title = if title.is_empty() {
+                "".to_string()
+            } else {
+                format!("\"{}\" ", title)
+            };
+
+            format!("{} {}replies: {} ", post.no(), title, post.replies())
+        } else {
+            "".to_string()
+        }
     }
 
     pub(crate) fn selected_post(&self) -> &ThreadPost {
