@@ -30,7 +30,8 @@ impl App {
                 move around:            w,a,s,d or arrows    toggle help bar:              h
                 move quickly:           CTRL + w,a,s,d       copy thread/post url:         c
                 toggle fullscreen:      z                    copy media url:               CTRL + c
-                paginate threads:       p                    open thread/post in browser   o
+                next page:              p                    open thread/post in browser   o
+                previous page:          CTRL + p             reload page:                  r
                 quit:                   q                    open media url in browser     CTRL + o
 
                 Note: to enter the board/thread use "d" or "->" key.
@@ -81,6 +82,10 @@ impl App {
 
     pub(crate) fn selected_board(&self) -> &Board {
         &self.boards.items[self.boards.state.selected().unwrap()]
+    }
+
+    pub(crate) fn selected_board_description(&self) -> Option<&str> {
+        Some(self.boards.items[self.boards.state.selected()?].meta_description())
     }
 
     pub(crate) fn selected_thread(&self) -> &Thread {

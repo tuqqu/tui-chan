@@ -12,13 +12,32 @@ pub(crate) fn format_default(str: &str) -> String {
     format!(" {}", str)
 }
 
-pub(crate) fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem {
+pub(crate) fn format_html(str: &str) -> String {
+    htmlescape::decode_html(str).unwrap()
+}
+
+pub(crate) fn format_post_short(post: &ThreadPost, no: usize, len: usize) -> ListItem {
+    format_post(post, format!("{}/{}", no, len), true)
+}
+
+pub(crate) fn format_post_full(post: &ThreadPost, no: usize) -> ListItem {
+    format_post(post, format!("#{}", no), false)
+}
+
+const CUT_MSG: &str = "[...]";
+const CUT_MSG_LEN: usize = CUT_MSG.len();
+
+const LEN: usize = 110;
+const LIMIT_SHORT: usize = 10;
+const LIMIT_LONG: usize = 60;
+
+fn format_post(post: &ThreadPost, no: String, short: bool) -> ListItem {
     let mut lines = vec![Spans::from("")];
     let mut header: Vec<Span> = vec![];
 
     if !post.sub().is_empty() {
         header.push(Span::styled(
-            format_default(post.sub()),
+            format_default(&htmlescape::decode_html(post.sub()).unwrap()),
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ));
     }
@@ -34,12 +53,10 @@ pub(crate) fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem
         Style::default().add_modifier(Modifier::ITALIC | Modifier::UNDERLINED),
     ));
 
-    if !short {
-        header.push(Span::styled(
-            format_default(&format!("#{}", no)),
-            Style::default().fg(Color::Yellow),
-        ));
-    }
+    header.push(Span::styled(
+        format_default(&no),
+        Style::default().fg(Color::Yellow),
+    ));
 
     if post.sticky() == 1 {
         header.push(Span::styled(format_default("📌"), Style::default()));
@@ -63,10 +80,6 @@ pub(crate) fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem
                 .add_modifier(Modifier::ITALIC),
         )));
     }
-
-    const LEN: usize = 110;
-    const LIMIT_SHORT: usize = 10;
-    const LIMIT_LONG: usize = 100;
 
     let cut_com = format_post_contents(
         post.com(),
@@ -93,78 +106,54 @@ pub(crate) fn format_post(post: &ThreadPost, no: usize, short: bool) -> ListItem
 fn format_post_contents(string: &str, sub_len: usize, line_limit: usize) -> Vec<Spans> {
     let string = htmlescape::decode_html(string).unwrap();
     let split = string.split("<br>");
-    let vec_str: Vec<&str> = split.collect();
+    let lines: Vec<&str> = split.collect();
 
-    let mut subs = Vec::with_capacity(sub_len * line_limit);
+    let mut spans = Vec::with_capacity(sub_len * line_limit);
     let mut i = 0;
 
-    'line_loop: for line in vec_str {
+    'line_loop: for line in lines {
         let line = strip::strip_tags(line);
+        let line_type = LineType::from_line(&line);
 
         let mut iter = line.chars();
         let strlen = line.len();
         let mut pos = 0;
 
         if strlen == 0 {
-            subs.push(Spans::from(""));
+            spans.push(Spans::from(""));
 
             i += 1;
 
-            if i == line_limit {
+            if i >= line_limit {
                 break;
             }
         }
 
         while pos < strlen {
-            let mut greentext = false;
-            let mut reply = false;
+            let len = iter
+                .by_ref()
+                .take(sub_len)
+                .fold(0, |acc, ch| acc + ch.len_utf8());
 
-            for (j, char) in line.chars().enumerate() {
-                if j == 0 && char == '>' {
-                    greentext = true;
-                }
-
-                if j == 1 && char == '>' && greentext {
-                    reply = true;
-                    greentext = false;
-                    break;
-                }
-            }
-
-            let mut len = 0;
-            for ch in iter.by_ref().take(sub_len) {
-                len += ch.len_utf8();
-            }
-            let mut style = Style::default();
-            if reply {
-                style = style.fg(Color::Yellow);
-            } else if greentext {
-                style = style.fg(Color::Green);
-            }
-
-            if i == line_limit {
-                let mut lim = 5;
-                if pos + len <= 5 {
-                    lim = 5 - len + pos;
-                }
-                subs.push(Spans::from(vec![
-                    Span::styled(format_default(&line[pos..pos + len - lim]), style),
-                    Span::styled("[...]", Style::default().fg(Color::Magenta)),
+            if i >= line_limit {
+                spans.push(Spans::from(vec![
+                    Span::styled(format_default(cut_line(&line, pos, len)), line_type.style()),
+                    Span::styled(CUT_MSG, Style::default().fg(Color::Magenta)),
                 ]));
                 break 'line_loop;
-            } else {
-                subs.push(Spans::from(Span::styled(
-                    format_default(&line[pos..pos + len]),
-                    style,
-                )));
             }
+
+            spans.push(Spans::from(Span::styled(
+                format_default(&line[pos..pos + len]),
+                line_type.style(),
+            )));
 
             pos += len;
             i += 1;
         }
     }
 
-    subs
+    spans
 }
 
 fn format_time(timestamp: u64) -> String {
@@ -172,6 +161,49 @@ fn format_time(timestamp: u64) -> String {
     let datetime = DateTime::<Utc>::from(st);
 
     datetime.format("%m/%d/%y(%a)%H:%M:%S").to_string()
+}
+
+fn cut_line(line: &str, pos: usize, cur_len: usize) -> &str {
+    let cut = if cur_len < CUT_MSG_LEN {
+        cur_len
+    } else {
+        CUT_MSG_LEN
+    };
+
+    &line[pos..pos + cur_len - cut]
+}
+
+enum LineType {
+    Text,
+    Greentext,
+    Reply,
+}
+
+impl Default for LineType {
+    fn default() -> Self {
+        LineType::Text
+    }
+}
+
+impl LineType {
+    fn from_line(line: &str) -> Self {
+        let first = line.chars().next();
+        let second = line.chars().nth(1);
+
+        match (first, second) {
+            (Some('>'), Some('>')) => Self::Reply,
+            (Some('>'), _) => Self::Greentext,
+            _ => Self::default(),
+        }
+    }
+
+    fn style(&self) -> Style {
+        match self {
+            Self::Text => Style::default(),
+            Self::Greentext => Style::default().fg(Color::Green),
+            Self::Reply => Style::default().fg(Color::Yellow),
+        }
+    }
 }
 
 #[cfg(test)]

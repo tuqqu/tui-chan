@@ -1,3 +1,4 @@
+use crate::format::format_html;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,7 +20,6 @@ impl Board {
         &self.title
     }
 
-    #[allow(dead_code)]
     pub(crate) fn meta_description(&self) -> &str {
         &self.meta_description
     }
@@ -42,27 +42,53 @@ impl Board {
 
 pub struct ThreadList {
     page: u8,
+    description: String,
 }
 
 impl ThreadList {
+    const DEFAULT: u8 = 1;
+
     pub(crate) fn new() -> Self {
-        Self { page: 1 }
+        Self {
+            page: Self::DEFAULT,
+            description: "".to_string(),
+        }
     }
 
-    pub(crate) fn next_page(&mut self) -> u8 {
-        let page = self.page;
-        self.page += 1;
-        page
+    pub(crate) fn next_page(&mut self, board: &Board) -> u8 {
+        if board.pages as u8 == self.page {
+            self.page = Self::DEFAULT;
+        } else {
+            self.page += 1;
+        }
+
+        self.page
     }
 
-    pub(crate) fn prev_page(&mut self) -> u8 {
-        let page = self.page;
-        self.page -= 1;
-        page
+    pub(crate) fn prev_page(&mut self, board: &Board) -> u8 {
+        if Self::DEFAULT == self.page {
+            self.page = board.pages as u8;
+        } else {
+            self.page -= 1;
+        }
+
+        self.page
     }
 
     pub(crate) fn cur_page(&self) -> u8 {
         self.page
+    }
+
+    pub(crate) fn set_description(&mut self, desc: Option<&str>) {
+        self.description = if let Some(desc) = desc {
+            format_html(desc)
+        } else {
+            "".to_string()
+        }
+    }
+
+    pub(crate) fn description(&self) -> &str {
+        &self.description
     }
 }
 

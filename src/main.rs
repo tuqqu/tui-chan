@@ -23,7 +23,7 @@ use crate::client::api::{
     from_name as channel_provider_from_name, ChannelProvider, ContentUrlProvider,
 };
 use crate::event::{Event, Events};
-use crate::format::{format_default, format_post};
+use crate::format::{format_default, format_post_full, format_post_short};
 use crate::model::{Board, Thread, ThreadList, ThreadPost};
 use crate::style::{SelectedField, StyleProvider};
 
@@ -141,13 +141,14 @@ fn main() -> Result<(), io::Error> {
 
             f.render_stateful_widget(items, chunks[0], &mut app.boards.state);
 
+            let thread_len = app.threads.items.len();
             let threads: Vec<ListItem> = app
                 .threads
                 .items
                 .iter()
-                .map(|thread| {
-                    let post = thread.posts().first().unwrap();
-                    format_post(post, 0, true)
+                .enumerate()
+                .map(|(i, thread)| {
+                    format_post_short(thread.posts().first().unwrap(), i + 1, thread_len)
                 })
                 .collect();
 
@@ -158,8 +159,9 @@ fn main() -> Result<(), io::Error> {
                         .border_style(Style::default().fg(block_style.border_color().thread_list()))
                         .border_type(block_style.border_type().thread_list())
                         .title(format_default(&format!(
-                            "Threads, page {} ",
-                            thread_list.cur_page()
+                            "Threads, page {} {}",
+                            thread_list.cur_page(),
+                            thread_list.description(),
                         ))),
                 )
                 .highlight_style(Style::default().bg(*style_prov.highlight_color()));
@@ -170,7 +172,7 @@ fn main() -> Result<(), io::Error> {
                 .items
                 .iter()
                 .enumerate()
-                .map(|(i, post)| format_post(post, i, false))
+                .map(|(i, post)| format_post_full(post, i + 1))
                 .collect();
 
             let thread = List::new(thread)
@@ -294,7 +296,7 @@ fn main() -> Result<(), io::Error> {
                                 let result = client
                                     .get_threads(
                                         app.selected_board().board(),
-                                        thread_list.next_page(),
+                                        thread_list.next_page(app.selected_board()),
                                     )
                                     .await;
                                 match result {
@@ -316,7 +318,7 @@ fn main() -> Result<(), io::Error> {
                                 let result = client
                                     .get_threads(
                                         app.selected_board().board(),
-                                        thread_list.prev_page(),
+                                        thread_list.prev_page(app.selected_board()),
                                     )
                                     .await;
                                 match result {
@@ -330,6 +332,47 @@ fn main() -> Result<(), io::Error> {
                         _ => {}
                     };
                 }
+                Key::Char('r') => {
+                    match selected_field {
+                        SelectedField::ThreadList => {
+                            let mut threads: Vec<Thread> = vec![];
+                            runtime.block_on(async {
+                                let result = client
+                                    .get_threads(
+                                        app.selected_board().board(),
+                                        thread_list.cur_page(),
+                                    )
+                                    .await;
+                                match result {
+                                    Ok(data) => threads = data,
+                                    Err(err) => eprintln!("{:#?}", err),
+                                };
+
+                                app.fill_threads(threads);
+                                app.threads.advance_by(1);
+                            });
+                        }
+                        SelectedField::Thread => {
+                            let mut thread: Vec<ThreadPost> = vec![];
+                            runtime.block_on(async {
+                                let result = client
+                                    .get_thread(
+                                        app.selected_board().board(),
+                                        app.selected_thread().posts().first().unwrap().no() as u64,
+                                    )
+                                    .await;
+                                match result {
+                                    Ok(data) => thread = data,
+                                    Err(err) => eprintln!("{:#?}", err),
+                                };
+
+                                app.fill_thread(thread);
+                                app.thread.advance_by(1);
+                            });
+                        }
+                        _ => {}
+                    };
+                }
                 Key::Right | Key::Char('d') => {
                     match selected_field {
                         SelectedField::BoardList => {
@@ -337,6 +380,7 @@ fn main() -> Result<(), io::Error> {
                             app.set_shown_thread_list(true);
 
                             thread_list = ThreadList::new();
+                            thread_list.set_description(app.selected_board_description());
                             let mut threads: Vec<Thread> = vec![];
                             runtime.block_on(async {
                                 let result = client
