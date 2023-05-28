@@ -39,7 +39,7 @@ mod style;
 fn main() -> Result<(), io::Error> {
     // Get keybinds from config file
     let keybinds = read_or_create_keybinds_file().expect("Failed to read keybinds file");
-    let _keybinds = Keybinds::parse_from_file(&keybinds).expect("Failed to parse keybinds file");
+    let keybinds = Keybinds::parse_from_file(&keybinds).expect("Failed to parse keybinds file");
 
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
@@ -198,10 +198,10 @@ fn main() -> Result<(), io::Error> {
 
         match events.next().unwrap() {
             Event::Input(input) => match input {
-                Key::Char('q') => {
+                _ if input == keybinds.quit => {
                     break;
                 }
-                Key::Left | Key::Char('a') => {
+                _ if input == keybinds.left => {
                     match selected_field {
                         SelectedField::BoardList => {}
                         SelectedField::ThreadList => {
@@ -217,19 +217,19 @@ fn main() -> Result<(), io::Error> {
                         }
                     };
                 }
-                Key::Down | Key::Char('s') => {
+                _ if input == keybinds.down => {
                     const STEPS: isize = 1;
                     app.advance(&selected_field, STEPS);
                 }
-                Key::Up | Key::Char('w') => {
+                _ if input == keybinds.up => {
                     const STEPS: isize = -1;
                     app.advance(&selected_field, STEPS);
                 }
-                Key::Ctrl('s') => {
+                _ if input == keybinds.quick_down => {
                     const STEPS: isize = 5;
                     app.advance(&selected_field, STEPS);
                 }
-                Key::Ctrl('w') => {
+                _ if input == keybinds.quick_up => {
                     const STEPS: isize = -5;
                     app.advance(&selected_field, STEPS);
                 }
