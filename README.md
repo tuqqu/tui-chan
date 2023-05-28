@@ -29,12 +29,16 @@ cargo uninstall
 
 ## Controls
 
+Controls can be configured in `~/.config/tui-chan/keybinds.conf`
+
+### Default keybinds
+
 Press `h` to show / hide help bar to look up controls.
 Use `d` or `->` to open board or thread and `a` or `<-` to return to the previous panel.
 
 | Description                                          | Keys                          |
 |------------------------------------------------------|-------------------------------|
-| Move around                                          | `w`,`a`,`s`,`d` or arrow keys |
+| Move around                                          | `w`,`a`,`s`,`d`               |
 | Move quickly                                         | control + `w`,`a`,`s`,`d`     |
 | Toggle help bar                                      | `h`                           |
 | Next page                                            | `p`                           |
