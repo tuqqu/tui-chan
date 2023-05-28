@@ -1,6 +1,6 @@
 use termion::event::Key;
 
-/// Parse keybind string as `termion::event::Key`.
+/// Parse (deserialize) keybind string as `termion::event::Key`.
 ///
 /// Include modifer key, by separating with a space ('Ctrl a').
 /// Valid modifier keys include 'Ctrl' and 'Alt'.
@@ -73,6 +73,31 @@ pub fn parse_keybind(keybind: &str) -> Result<Key, ParseErrorKind> {
     };
 
     Ok(key)
+}
+
+/// Stringify (serialize) key, using same format to parse keybind
+pub fn display_key(key: &Key) -> String {
+    match key {
+        Key::Char(ch) => ch.to_string(),
+        Key::Ctrl(ch) => format!("Ctrl {ch}"),
+        Key::Alt(ch) => format!("Alt {ch}"),
+        // Mirrors the match statement in `parse_keybind`
+        Key::Backspace => String::from("Backspace"),
+        Key::Left => String::from("Left"),
+        Key::Right => String::from("Right"),
+        Key::Up => String::from("Up"),
+        Key::Down => String::from("Down"),
+        Key::Home => String::from("Home"),
+        Key::End => String::from("End"),
+        Key::PageUp => String::from("PageUp"),
+        Key::PageDown => String::from("PageDown"),
+        Key::BackTab => String::from("BackTab"),
+        Key::Delete => String::from("Delete"),
+        Key::Insert => String::from("Insert"),
+        Key::Esc => String::from("Esc"),
+
+        _ => unreachable!("Trying to serialize `Key` which should never exist"),
+    }
 }
 
 /// Error parsing keybind

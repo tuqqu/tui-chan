@@ -1,32 +1,33 @@
 mod file;
-mod parse;
+mod key;
 
 pub use self::file::read_or_create_keybinds_file;
-pub use self::parse::ParseErrorKind;
+pub use self::key::ParseErrorKind;
 
 use std::collections::HashMap;
 use termion::event::Key;
 
-use self::parse::parse_keybind;
+use self::key::{display_key, parse_keybind};
 
 // Creates `pub struct Keybinds`
 macro_rules! define_keybinds {
     { $(
         $name:ident                 // ID
         $($mod:ident)? $key:literal // DEFAULT KEYBIND
-        #[$meta:meta]               // DESCRIPTION
+        #[doc = $desc:literal]      // DESCRIPTION
     )* $(,)? } => {
         /// Keybind configuration
         #[derive(Debug)]
         pub struct Keybinds { $(
-            #[$meta]
+            #[doc = $desc]
             pub $name: Key,
         )* }
 
         impl Keybinds {
             /// Parse keybinds from configuration file (`.conf`)
+            ///
+            /// Uses default value if keybind not given
             pub fn parse_from_file(file: &str) -> Result<Self, KeybindsError> {
-                use Key::{Char, Ctrl};
 
                 // Get key/value pairs as hashmap
                 let mut keymap = parse_keymap_file(file)?;
@@ -39,12 +40,29 @@ macro_rules! define_keybinds {
                             .unwrap_or_else(|| define_keybinds!(@modifier $($mod)?)($key)),
                 )* })
             }
+
+            /// Get contents of keybind file, with default configuration
+            pub fn default_file_contents() -> String {
+                let mut contents = String::from("# Keybinds for tui-chan\n# https://github.com/tuqqu/tui-chan\n\n");
+
+                $(
+                    let key = define_keybinds!(@modifier $($mod)?)($key);
+
+                    contents += &format!("#{}\n{}={}\n",
+                        $desc,
+                        stringify!($name),
+                        display_key(&key),
+                    );
+                )*
+
+                contents
+            }
         }
     };
 
     // Use `Char` if no modifier given
-    (@modifier $mod:ident) => { $mod };
-    (@modifier           ) => { Char };
+    (@modifier $mod:ident) => { Key::$mod };
+    (@modifier           ) => { Key::Char };
 }
 
 define_keybinds! {
@@ -118,7 +136,7 @@ fn parse_keymap_file(file: &str) -> Result<KeyMap, KeybindsError> {
         let line_no = line_no + 1;
 
         // Ignore blank lines and comments
-        if line.starts_with('#') {
+        if line.is_empty() || line.starts_with('#') {
             continue;
         }
 
@@ -127,6 +145,7 @@ fn parse_keymap_file(file: &str) -> Result<KeyMap, KeybindsError> {
         // Name of keybind
         let name = split
             .next()
+            .filter(|name| !name.is_empty())
             .ok_or(KeybindsError::NoName { line_no })?
             .trim();
 
@@ -141,6 +160,7 @@ fn parse_keymap_file(file: &str) -> Result<KeyMap, KeybindsError> {
         // Value of keybind
         let keybind = split
             .next()
+            .filter(|name| !name.is_empty())
             .ok_or(KeybindsError::NoValue { line_no })?
             .trim();
 
