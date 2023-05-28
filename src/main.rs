@@ -6,7 +6,6 @@ use client::ChanClient;
 use clipboard::{ClipboardContext, ClipboardProvider};
 use open::that as open_in_browser;
 use reqwest::Client;
-use termion::event::Key;
 use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
@@ -233,7 +232,7 @@ fn main() -> Result<(), io::Error> {
                     const STEPS: isize = -5;
                     app.advance(&selected_field, STEPS);
                 }
-                Key::Char('z') => {
+                _ if input == keybinds.fullscreen => {
                     match selected_field {
                         SelectedField::BoardList => {
                             app.toggle_shown_board_list();
@@ -254,10 +253,10 @@ fn main() -> Result<(), io::Error> {
                         }
                     };
                 }
-                Key::Char('h') => {
+                _ if input == keybinds.help => {
                     app.help_bar_mut().toggle_shown();
                 }
-                Key::Char('o') => {
+                _ if input == keybinds.open_thread => {
                     let url = match selected_field {
                         SelectedField::BoardList => app.url_boards(api),
                         SelectedField::ThreadList => app.url_threads(api),
@@ -266,7 +265,7 @@ fn main() -> Result<(), io::Error> {
 
                     open_in_browser(url).expect("Browser error.");
                 }
-                Key::Ctrl('o') => {
+                _ if input == keybinds.open_media => {
                     let url = match selected_field {
                         SelectedField::BoardList => None,
                         SelectedField::ThreadList => app.media_url_threads(api),
@@ -277,7 +276,7 @@ fn main() -> Result<(), io::Error> {
                         open_in_browser(url).expect("Browser error.");
                     }
                 }
-                Key::Char('c') => {
+                _ if input == keybinds.copy_thread => {
                     let url = match selected_field {
                         SelectedField::BoardList => app.url_boards(api),
                         SelectedField::ThreadList => app.url_threads(api),
@@ -286,7 +285,7 @@ fn main() -> Result<(), io::Error> {
 
                     ctx.set_contents(url).expect("Clipboard error.");
                 }
-                Key::Ctrl('c') => {
+                _ if input == keybinds.copy_media => {
                     let url = match selected_field {
                         SelectedField::BoardList => None,
                         SelectedField::ThreadList => app.media_url_threads(api),
@@ -297,7 +296,7 @@ fn main() -> Result<(), io::Error> {
                         ctx.set_contents(url).expect("Clipboard error.");
                     }
                 }
-                Key::Char('p') => {
+                _ if input == keybinds.page_next => {
                     match selected_field {
                         SelectedField::ThreadList => {
                             let mut threads: Vec<Thread> = vec![];
@@ -319,7 +318,7 @@ fn main() -> Result<(), io::Error> {
                         _ => {}
                     };
                 }
-                Key::Ctrl('p') => {
+                _ if input == keybinds.page_previous => {
                     match selected_field {
                         SelectedField::ThreadList => {
                             let mut threads: Vec<Thread> = vec![];
@@ -341,7 +340,7 @@ fn main() -> Result<(), io::Error> {
                         _ => {}
                     };
                 }
-                Key::Char('r') => {
+                _ if input == keybinds.reload => {
                     match selected_field {
                         SelectedField::ThreadList => {
                             let mut threads: Vec<Thread> = vec![];
@@ -382,7 +381,7 @@ fn main() -> Result<(), io::Error> {
                         _ => {}
                     };
                 }
-                Key::Right | Key::Char('d') => {
+                _ if input == keybinds.right => {
                     match selected_field {
                         SelectedField::BoardList => {
                             selected_field = SelectedField::ThreadList;

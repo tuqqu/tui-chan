@@ -116,8 +116,8 @@ fn parse_keymap_file(file: &str) -> Result<KeyMap, KeybindsError> {
     for (line_no, line) in file.lines().enumerate() {
         let line_no = line_no + 1;
 
-        // Ignore comments
-        if line.starts_with('#') {
+        // Ignore blank lines and comments
+        if line.trim().is_empty() || line.starts_with('#') {
             continue;
         }
 
