@@ -67,6 +67,7 @@ define_keybinds! {
     reload             'r'  /// Reload page
     help               'h'  /// Toggle help bar
     quit               'q'  /// Quit
+    // Default `quit` keybind must also be updated in `event.rs`
 }
 
 /// Error parsing keybind configuration file
@@ -117,7 +118,7 @@ fn parse_keymap_file(file: &str) -> Result<KeyMap, KeybindsError> {
         let line_no = line_no + 1;
 
         // Ignore blank lines and comments
-        if line.trim().is_empty() || line.starts_with('#') {
+        if line.starts_with('#') {
             continue;
         }
 
