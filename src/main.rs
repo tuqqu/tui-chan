@@ -24,7 +24,7 @@ use crate::client::api::{
 };
 use crate::event::{Event, Events};
 use crate::format::{format_default, format_post_full, format_post_short};
-use crate::keybinds::Keybinds;
+use crate::keybinds::{read_or_create_keybinds_file, Keybinds};
 use crate::model::{Board, Thread, ThreadList, ThreadPost};
 use crate::style::{SelectedField, StyleProvider};
 
@@ -37,6 +37,10 @@ mod model;
 mod style;
 
 fn main() -> Result<(), io::Error> {
+    // Get keybinds from config file
+    let keybinds = read_or_create_keybinds_file().expect("Failed to read keybinds file");
+    let _keybinds = Keybinds::parse_from_file(&keybinds).expect("Failed to parse keybinds file");
+
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
     let stdout = AlternateScreen::from(stdout);
@@ -70,9 +74,6 @@ fn main() -> Result<(), io::Error> {
     let mut thread_list = ThreadList::new();
     let style_prov = StyleProvider::new();
     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-
-    let file = std::fs::read_to_string("./keybinds.conf").unwrap();
-    let _keybinds = Keybinds::parse_from_file(&file);
 
     loop {
         terminal.draw(|f| {

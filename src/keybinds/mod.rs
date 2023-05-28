@@ -1,13 +1,15 @@
+mod file;
 mod parse;
 
-use std::collections::HashMap;
+pub use self::file::read_or_create_keybinds_file;
+pub use self::parse::ParseErrorKind;
 
+use std::collections::HashMap;
 use termion::event::Key;
 
 use self::parse::parse_keybind;
-pub use self::parse::ParseErrorKind;
 
-// Creates `pub struct Keybinds`, with fields of type `Key` and default values
+// Creates `pub struct Keybinds`
 macro_rules! define_keybinds {
     { $(
         $name:ident                 // ID
@@ -15,6 +17,7 @@ macro_rules! define_keybinds {
         #[$meta:meta]               // DESCRIPTION
     )* $(,)? } => {
         /// Keybind configuration
+        #[derive(Debug)]
         pub struct Keybinds { $(
             #[$meta]
             pub $name: Key,
@@ -67,6 +70,7 @@ define_keybinds! {
 }
 
 /// Error parsing keybind configuration file
+#[derive(Debug)]
 pub enum KeybindsError {
     /// Failed to parse single keybind
     Parse {
