@@ -24,6 +24,7 @@ use crate::client::api::{
 };
 use crate::event::{Event, Events};
 use crate::format::{format_default, format_post_full, format_post_short};
+// use crate::keybinds::Keybinds;
 use crate::model::{Board, Thread, ThreadList, ThreadPost};
 use crate::style::{SelectedField, StyleProvider};
 
@@ -31,6 +32,7 @@ mod app;
 mod client;
 mod event;
 mod format;
+mod keybinds;
 mod model;
 mod style;
 
@@ -68,6 +70,26 @@ fn main() -> Result<(), io::Error> {
     let mut thread_list = ThreadList::new();
     let style_prov = StyleProvider::new();
     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+
+    // let keybinds = Keybinds {
+    //     up: String::from("w"),
+    //     down: String::from("s"),
+    //     left: String::from("a"),
+    //     right: String::from("d"),
+    //
+    //     page_next: String::from("p"),
+    //     page_previous: String::from("Ctrl+P"),
+    //
+    //     copy_thread: String::from("c"),
+    //     copy_media: String::from("Ctrl+C"),
+    //     open_thread: String::from("o"),
+    //     open_media: String::from("Ctrl+o"),
+    //
+    //     fullscreen: String::from("z"),
+    //     reload: String::from("r"),
+    //     help: String::from("h"),
+    //     quit: String::from("q"),
+    // };
 
     loop {
         terminal.draw(|f| {
