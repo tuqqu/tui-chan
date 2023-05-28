@@ -1,31 +1,83 @@
 use termion::event::Key;
 
-/// Keybind configuration
-#[allow(dead_code)]
-pub struct Keybinds {
-    pub up: Key,
-    pub down: Key,
-    pub left: Key,
-    pub right: Key,
+/// Parse keybind string as `termion::event::Key`.
+///
+/// Include modifer key, by separating with a space ('Ctrl a').
+/// Valid modifier keys include 'Ctrl' and 'Alt'.
+///
+/// To use 'Shift' with characters, use capitalized form ('Ctrl A', not 'Ctrl Shift a')
+///
+/// Space is used as separator, because plus ('+') can be used as key name.
+pub fn parse_keybind(keybind: &str) -> Result<Key, ParseErrorKind> {
+    let mut parts = keybind.split(' ').rev();
 
-    pub page_next: Key,
-    pub page_previous: Key,
+    // Last part is key name (must exist)
+    let Some(keyname) = parts.next().filter(|str| !str.is_empty()) else {
+        return Err(ParseErrorKind::MissingKeyName);
+    };
 
-    pub copy_thread: Key,
-    pub copy_media: Key,
-    pub open_thread: Key,
-    pub open_media: Key,
+    // Optional modifier, next from end
+    let modifier = parts.next().filter(|str| !str.is_empty());
 
-    pub fullscreen: Key,
-    pub reload: Key,
-    pub help: Key,
-    pub quit: Key,
+    // Anything before that is invalid
+    if parts.next().is_some() {
+        return Err(ParseErrorKind::TooManyModifiers);
+    }
+
+    // One character in keyname
+    if let Some(ch) = keyname.chars().next() {
+        if keyname.len() == 1 {
+            // Check character is valid ASCII letter, number or symbol (not space)
+            if !(33 as char..=126 as char).contains(&ch) {
+                return Err(ParseErrorKind::InvalidCharacterKeyName);
+            }
+
+            // No modifier
+            let Some(modifier) = modifier else {
+                return Ok(Key::Char(ch));
+            };
+
+            // Use valid modifier
+            let key = match modifier.to_lowercase().as_str() {
+                "ctrl" => Key::Ctrl(ch),
+                "alt" => Key::Alt(ch),
+                _ => return Err(ParseErrorKind::UnknownModifier),
+            };
+
+            return Ok(key);
+        }
+    }
+
+    // Cannot use modifier with special key
+    if modifier.is_some() {
+        return Err(ParseErrorKind::ModifierWithSpecialKey);
+    }
+
+    // Use valid special key name
+    let key = match keyname.to_lowercase().as_str() {
+        "backspace" => Key::Backspace,
+        "left" => Key::Left,
+        "right" => Key::Right,
+        "up" => Key::Up,
+        "down" => Key::Down,
+        "home" => Key::Home,
+        "end" => Key::End,
+        "pageup" => Key::PageUp,
+        "pagedown" => Key::PageDown,
+        "backtab" => Key::BackTab,
+        "delete" => Key::Delete,
+        "insert" => Key::Insert,
+        "esc" => Key::Esc,
+
+        _ => return Err(ParseErrorKind::InvalidSpecialKeyName),
+    };
+
+    Ok(key)
 }
 
 /// Error parsing keybind
 #[derive(Debug, PartialEq)]
-#[allow(dead_code)]
-pub enum ParseKeybindError {
+pub enum ParseErrorKind {
     /// No key name was found in keybind
     MissingKeyName,
     /// Keyname character is not between ASCII 33-126.
@@ -49,82 +101,6 @@ pub enum ParseKeybindError {
     ModifierWithSpecialKey,
 }
 
-/// Parse keybind string as `termion::event::Key`.
-///
-/// Include modifer key, by separating with a space ('Ctrl a').
-/// Valid modifier keys include 'Ctrl' and 'Alt'.
-///
-/// To use 'Shift' with characters, use capitalized form ('Ctrl A', not 'Ctrl Shift a')
-///
-/// Space is used as separator, because plus ('+') can be used as key name.
-#[allow(dead_code)]
-pub fn parse_keybind(keybind: &str) -> Result<Key, ParseKeybindError> {
-    let mut parts = keybind.split(' ').rev();
-
-    // Last part is key name (must exist)
-    let Some(keyname) = parts.next().filter(|str| !str.is_empty()) else {
-        return Err(ParseKeybindError::MissingKeyName);
-    };
-
-    // Optional modifier, next from end
-    let modifier = parts.next().filter(|str| !str.is_empty());
-
-    // Anything before that is invalid
-    if parts.next().is_some() {
-        return Err(ParseKeybindError::TooManyModifiers);
-    }
-
-    // One character in keyname
-    if let Some(ch) = keyname.chars().next() {
-        if keyname.len() == 1 {
-            // Check character is valid ASCII letter, number or symbol (not space)
-            if !(33 as char..=126 as char).contains(&ch) {
-                return Err(ParseKeybindError::InvalidCharacterKeyName);
-            }
-
-            // No modifier
-            let Some(modifier) = modifier else {
-                return Ok(Key::Char(ch));
-            };
-
-            // Use valid modifier
-            let key = match modifier.to_lowercase().as_str() {
-                "ctrl" => Key::Ctrl(ch),
-                "alt" => Key::Alt(ch),
-                _ => return Err(ParseKeybindError::UnknownModifier),
-            };
-
-            return Ok(key);
-        }
-    }
-
-    // Cannot use modifier with special key
-    if modifier.is_some() {
-        return Err(ParseKeybindError::ModifierWithSpecialKey);
-    }
-
-    // Use valid special key name
-    let key = match keyname.to_lowercase().as_str() {
-        "backspace" => Key::Backspace,
-        "left" => Key::Left,
-        "right" => Key::Right,
-        "up" => Key::Up,
-        "down" => Key::Down,
-        "home" => Key::Home,
-        "end" => Key::End,
-        "pageup" => Key::PageUp,
-        "pagedown" => Key::PageDown,
-        "backtab" => Key::BackTab,
-        "delete" => Key::Delete,
-        "insert" => Key::Insert,
-        "esc" => Key::Esc,
-
-        _ => return Err(ParseKeybindError::InvalidSpecialKeyName),
-    };
-
-    Ok(key)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,7 +108,7 @@ mod tests {
     #[test]
     fn parse_keybind_works() {
         use parse_keybind as parse;
-        use ParseKeybindError::*;
+        use ParseErrorKind::*;
 
         // Ok
 
