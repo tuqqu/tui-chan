@@ -4,7 +4,11 @@ use super::Keybinds;
 
 /// Read keybinds file in config directory as string, and create new file if it does not exist
 pub fn read_or_create_keybinds_file() -> Result<String, io::Error> {
-    let config = get_config_folder().expect("Cannot find config home folder");
+    // Find config folder or use default
+    let Ok(config) = get_config_folder() else {
+        eprintln!("Could not find home config folder file. Continuing with default config.");
+        return Ok( Keybinds::default_file_contents());
+    };
 
     let folder = format!("{config}/tui-chan");
     let filepath = format!("{folder}/keybinds.conf");
