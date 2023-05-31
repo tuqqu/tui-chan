@@ -34,7 +34,7 @@ Controls can be configured in `~/.config/tui-chan/keybinds.conf`
 ### Default controls
 
 Press `h` to show / hide help bar to look up controls.
-Use `d` or `->` to open board or thread and `a` or `<-` to return to the previous panel.
+Use `d` to open board or thread and `a` to return to the previous panel.
 
 | Description                                          | Keys                          |
 |------------------------------------------------------|-------------------------------|
