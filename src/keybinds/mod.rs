@@ -2,12 +2,12 @@ mod file;
 mod key;
 
 pub use self::file::read_or_create_keybinds_file;
-pub use self::key::ParseErrorKind;
+pub use self::key::{display_key, ParseErrorKind};
 
 use std::collections::HashMap;
 use termion::event::Key;
 
-use self::key::{display_key, parse_keybind};
+use self::key::parse_keybind;
 
 // Creates `pub struct Keybinds`
 macro_rules! define_keybinds {

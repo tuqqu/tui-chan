@@ -2,6 +2,7 @@ use tui::widgets::ListState;
 
 use crate::client::api::ContentUrlProvider;
 use crate::format::format_html;
+use crate::keybinds::{display_key, Keybinds};
 use crate::model::{Board, Thread, ThreadPost};
 use crate::style::SelectedField;
 
@@ -13,8 +14,100 @@ pub(crate) struct App {
     help_bar: HelpBar,
 }
 
+/// Format 2D array as table, with aligned columns
+fn format_table(data: &[&[&str]]) -> String {
+    // Find the maximum length of each column
+    let mut max_lengths = vec![0; data[0].len()];
+    for row in data {
+        for (i, &cell) in row.iter().enumerate() {
+            max_lengths[i] = max_lengths[i].max(cell.len());
+        }
+    }
+    // Compile table
+    let mut rows = Vec::new();
+    for row in data {
+        let mut cells = Vec::new();
+        for (i, &cell) in row.iter().enumerate() {
+            cells.push(format!("{:<width$} ", cell, width = max_lengths[i] + 3));
+        }
+        rows.push(cells.join(""));
+    }
+    rows.join("\n")
+}
+
 impl App {
-    pub(crate) fn new(boards: Vec<Board>, threads: Vec<Thread>, thread: Vec<ThreadPost>) -> Self {
+    pub(crate) fn new(
+        boards: Vec<Board>,
+        threads: Vec<Thread>,
+        thread: Vec<ThreadPost>,
+        keybinds: &Keybinds,
+    ) -> Self {
+        /// Get keybinds as strings
+        macro_rules! get_keys {
+            ( $($name:ident),* $(,)? ) => {
+                $( let $name = display_key(&keybinds.$name);)*
+            }
+        }
+        get_keys![
+            up,
+            down,
+            left,
+            right,
+            quick_up,
+            quick_down,
+            quick_left,
+            quick_right,
+            page_next,
+            page_previous,
+            copy_thread,
+            open_thread,
+            copy_media,
+            open_media,
+            fullscreen,
+            reload,
+            help,
+            quit,
+        ];
+
+        // Create table of keybinds
+        let table: &[&[&str]] = &[
+            &[
+                "move around:",
+                &format!("{up}, {down}, {left}, {right}"),
+                "toggle help bar:",
+                &help,
+            ],
+            &[
+                "move quickly:",
+                &format!("{quick_up}, {quick_down}, {quick_left}, {quick_right}"),
+                "copy thread/post url:",
+                &copy_thread,
+            ],
+            &[
+                "toggle fullscreen:",
+                &fullscreen,
+                "copy media url:",
+                &copy_media,
+            ],
+            &[
+                "next page:",
+                &page_next,
+                "open thread/post in browser",
+                &open_thread,
+            ],
+            &["previous page:", &page_previous, "reload page:", &reload],
+            &["quit:", &quit, "open media url in browser:", &open_media],
+        ];
+
+        let text = format!(
+            r##"
+                {table}
+                Controls can be changed in ~/.config/tui-chan/keybinds.conf
+                Note: to enter the board/thread use "{right}"
+            "##,
+            table = format_table(table)
+        );
+
         Self {
             boards: ItemLIst::new(boards),
             threads: ItemLIst::new(threads),
@@ -26,17 +119,8 @@ impl App {
             },
             help_bar: HelpBar {
                 shown: false,
-                title: "Help (\"h\" to toggle)",
-                text: r##"
-                move around:            w,a,s,d or arrows    toggle help bar:              h
-                move quickly:           CTRL + w,a,s,d       copy thread/post url:         c
-                toggle fullscreen:      z                    copy media url:               CTRL + c
-                next page:              p                    open thread/post in browser   o
-                previous page:          CTRL + p             reload page:                  r
-                quit:                   q                    open media url in browser     CTRL + o
-
-                Note: to enter the board/thread use "d" or "->" key.
-                "##,
+                title: format!("Help (\"{help}\" to toggle)"),
+                text,
             },
         }
     }
@@ -256,8 +340,8 @@ pub(crate) struct ItemLIst<T> {
 
 pub(crate) struct HelpBar {
     shown: bool,
-    title: &'static str,
-    text: &'static str,
+    title: String,
+    text: String,
 }
 
 impl HelpBar {
@@ -269,12 +353,12 @@ impl HelpBar {
         self.shown ^= true;
     }
 
-    pub(crate) fn title(&self) -> &'static str {
-        self.title
+    pub(crate) fn title(&self) -> &String {
+        &self.title
     }
 
-    pub(crate) fn text(&self) -> &'static str {
-        self.text
+    pub(crate) fn text(&self) -> &String {
+        &self.text
     }
 }
 

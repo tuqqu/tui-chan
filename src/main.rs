@@ -67,7 +67,7 @@ fn main() -> Result<(), io::Error> {
         boards = client.get_boards().await.unwrap();
     });
 
-    let mut app = App::new(boards, vec![], vec![]);
+    let mut app = App::new(boards, vec![], vec![], &keybinds);
     app.set_shown_board_list(true);
     let mut selected_field: SelectedField = SelectedField::BoardList;
     let mut thread_list = ThreadList::new();
@@ -95,7 +95,7 @@ fn main() -> Result<(), io::Error> {
                         .fg(Color::Magenta)
                         .add_modifier(Modifier::BOLD),
                 ));
-                let paragraph = Paragraph::new(app.help_bar().text())
+                let paragraph = Paragraph::new(app.help_bar().text().as_str())
                     .block(block)
                     .wrap(Wrap { trim: true });
                 f.render_widget(paragraph, helpbar_chunk[1]);

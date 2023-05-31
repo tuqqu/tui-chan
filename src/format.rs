@@ -173,16 +173,12 @@ fn cut_line(line: &str, pos: usize, cur_len: usize) -> &str {
     &line[pos..pos + cur_len - cut]
 }
 
+#[derive(Default)]
 enum LineType {
+    #[default]
     Text,
     Greentext,
     Reply,
-}
-
-impl Default for LineType {
-    fn default() -> Self {
-        LineType::Text
-    }
 }
 
 impl LineType {
