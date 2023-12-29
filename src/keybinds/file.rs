@@ -7,7 +7,7 @@ pub fn read_or_create_keybinds_file() -> Result<String, io::Error> {
     // Find config folder or use default
     let Ok(config) = get_config_folder() else {
         eprintln!("Could not find home config folder file. Continuing with default config.");
-        return Ok( Keybinds::default_file_contents());
+        return Ok(Keybinds::default_file_contents());
     };
 
     let folder = format!("{config}/tui-chan");
