@@ -85,7 +85,7 @@ fn main() -> Result<(), io::Error> {
             }
 
             let helpbar_chunk = Layout::default()
-                .constraints(constraints.as_ref())
+                .constraints::<&[Constraint]>(constraints.as_ref())
                 .split(f.size());
 
             if app.help_bar().shown() {
