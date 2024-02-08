@@ -79,12 +79,8 @@ impl ThreadList {
         self.page
     }
 
-    pub(crate) fn set_description(&mut self, desc: Option<&str>) {
-        self.description = if let Some(desc) = desc {
-            format_html(desc)
-        } else {
-            "".to_string()
-        }
+    pub(crate) fn set_description(&mut self, desc: &str) {
+        self.description = format_html(desc);
     }
 
     pub(crate) fn description(&self) -> &str {

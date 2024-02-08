@@ -45,7 +45,7 @@ fn main() -> Result<(), io::Error> {
     let stdout = AlternateScreen::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    let mut runtime = Runtime::new()?;
+    let runtime = Runtime::new()?;
 
     let args: Vec<String> = env::args().collect();
     let chan: &str = if args.len() == 1 { "default" } else { &args[1] };
@@ -394,7 +394,7 @@ fn main() -> Result<(), io::Error> {
                             app.set_shown_thread_list(true);
 
                             thread_list = ThreadList::new();
-                            thread_list.set_description(app.selected_board_description());
+                            thread_list.set_description(app.selected_board().meta_description());
                             let mut threads: Vec<Thread> = vec![];
                             runtime.block_on(async {
                                 let result = client

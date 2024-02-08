@@ -166,15 +166,11 @@ impl App {
     }
 
     pub(crate) fn selected_board(&self) -> &Board {
-        &self.boards.items[self.boards.state.selected().unwrap()]
-    }
-
-    pub(crate) fn selected_board_description(&self) -> Option<&str> {
-        Some(self.boards.items[self.boards.state.selected()?].meta_description())
+        &self.boards.items[self.boards.state.selected().unwrap_or(0)]
     }
 
     pub(crate) fn selected_thread(&self) -> &Thread {
-        &self.threads.items[self.threads.state.selected().unwrap()]
+        &self.threads.items[self.threads.state.selected().unwrap_or(0)]
     }
 
     pub(crate) fn selected_thread_description(&self) -> String {
