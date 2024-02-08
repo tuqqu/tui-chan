@@ -153,7 +153,12 @@ fn main() -> Result<(), io::Error> {
                 .iter()
                 .enumerate()
                 .map(|(i, thread)| {
-                    format_post_short(thread.posts().first().unwrap(), i + 1, thread_len)
+                    format_post_short(
+                        thread.posts().first().unwrap(),
+                        i + 1,
+                        thread_len,
+                        chunks[1],
+                    )
                 })
                 .collect();
 
@@ -170,6 +175,7 @@ fn main() -> Result<(), io::Error> {
                         ))),
                 )
                 .highlight_style(Style::default().bg(*style_prov.highlight_color()));
+
             f.render_stateful_widget(threads, chunks[1], &mut app.threads.state);
 
             let thread: Vec<ListItem> = app
@@ -177,7 +183,7 @@ fn main() -> Result<(), io::Error> {
                 .items
                 .iter()
                 .enumerate()
-                .map(|(i, post)| format_post_full(post, i + 1))
+                .map(|(i, post)| format_post_full(post, i + 1, chunks[2]))
                 .collect();
 
             let thread = List::new(thread)

@@ -1,6 +1,7 @@
 use std::time::{Duration, UNIX_EPOCH};
 
 use chrono::{DateTime, Utc};
+use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans, Text};
 use tui::widgets::ListItem;
@@ -16,22 +17,21 @@ pub(crate) fn format_html(str: &str) -> String {
     htmlescape::decode_html(str).unwrap()
 }
 
-pub(crate) fn format_post_short(post: &ThreadPost, no: usize, len: usize) -> ListItem {
-    format_post(post, format!("{}/{}", no, len), true)
+pub(crate) fn format_post_short(post: &ThreadPost, no: usize, len: usize, area: Rect) -> ListItem {
+    format_post(post, format!("{}/{}", no, len), area, true)
 }
 
-pub(crate) fn format_post_full(post: &ThreadPost, no: usize) -> ListItem {
-    format_post(post, format!("#{}", no), false)
+pub(crate) fn format_post_full(post: &ThreadPost, no: usize, area: Rect) -> ListItem {
+    format_post(post, format!("#{}", no), area, false)
 }
 
 const CUT_MSG: &str = "[...]";
 const CUT_MSG_LEN: usize = CUT_MSG.len();
 
-const LEN: usize = 110;
 const LIMIT_SHORT: usize = 10;
 const LIMIT_LONG: usize = 60;
 
-fn format_post(post: &ThreadPost, no: String, short: bool) -> ListItem {
+fn format_post(post: &ThreadPost, no: String, area: Rect, short: bool) -> ListItem {
     let mut lines = vec![Spans::from("")];
     let mut header: Vec<Span> = vec![];
 
@@ -83,7 +83,7 @@ fn format_post(post: &ThreadPost, no: String, short: bool) -> ListItem {
 
     let cut_com = format_post_contents(
         post.com(),
-        LEN,
+        calc_width(area) as usize,
         if short { LIMIT_SHORT } else { LIMIT_LONG },
     );
     for span in cut_com {
@@ -173,6 +173,20 @@ fn cut_line(line: &str, pos: usize, cur_len: usize) -> &str {
     &line[pos..pos + cur_len - cut]
 }
 
+fn calc_width(area: Rect) -> u16 {
+    const MIN_WIDTH: i16 = 10;
+    const BORDERS: i16 = 4;
+
+    let area_width = area.width as i16;
+    let width = if area_width - BORDERS < MIN_WIDTH {
+        MIN_WIDTH
+    } else {
+        area_width - BORDERS
+    };
+
+    width as u16
+}
+
 #[derive(Default)]
 enum LineType {
     #[default]
@@ -219,7 +233,10 @@ mod tests {
 
     #[test]
     fn test_format_post_contents() {
-        const POST: &str = "Natus est Schubert Himmelpfortgrund in vico Alsergrund Vindobonae die 31 Ianuarii 1797. Pater, Franciscus Theodorus Schubert, filius pagani Moraviani, magister scholae paroechialis; mater, Elisabeth (Vietz), filia artificis claustrarii Silesici fuit, quae ante nuptias ut ancilla in familia Vindobonensi laboraverat.";
+        const POST: &str = "Natus est Schubert Himmelpfortgrund in vico Alsergrund Vindobonae \
+        die 31 Ianuarii 1797. Pater, Franciscus Theodorus Schubert, filius pagani Moraviani, \
+        magister scholae paroechialis; mater, Elisabeth (Vietz), filia artificis claustrarii \
+        Silesici fuit, quae ante nuptias ut ancilla in familia Vindobonensi laboraverat.";
 
         // untruncated post formatting
         assert_eq!(format_post_contents(POST, 100, 5), vec![
