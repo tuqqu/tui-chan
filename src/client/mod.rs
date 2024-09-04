@@ -24,7 +24,7 @@ impl ChanClient {
     pub(crate) async fn get_boards(&self) -> ClientResult<Vec<Board>> {
         let boards_response: BoardListResponse = self
             .client
-            .get(&self.api.boards())
+            .get(self.api.boards())
             .send()
             .await?
             .json::<BoardListResponse>()
@@ -36,7 +36,7 @@ impl ChanClient {
     pub(crate) async fn get_threads(&self, board: &str, page: u8) -> ClientResult<Vec<Thread>> {
         let threads_response: ThreadListResponse = self
             .client
-            .get(&self.api.threads(board, page))
+            .get(self.api.threads(board, page))
             .send()
             .await?
             .json::<ThreadListResponse>()
@@ -48,7 +48,7 @@ impl ChanClient {
     pub(crate) async fn get_thread(&self, board: &str, no: u64) -> ClientResult<Vec<ThreadPost>> {
         let thread_response: ThreadResponse = self
             .client
-            .get(&self.api.thread(board, no))
+            .get(self.api.thread(board, no))
             .send()
             .await?
             .json::<ThreadResponse>()

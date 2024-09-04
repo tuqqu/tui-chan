@@ -64,7 +64,12 @@ fn main() -> Result<(), io::Error> {
 
     let mut boards: Vec<Board> = vec![];
     runtime.block_on(async {
-        boards = client.get_boards().await.unwrap();
+        let result = client.get_boards().await;
+
+        match result {
+            Ok(data) => boards = data,
+            Err(_) => panic!("Could not fetch boards"),
+        };
     });
 
     let mut app = App::new(boards, vec![], vec![], &keybinds);
@@ -241,8 +246,10 @@ fn main() -> Result<(), io::Error> {
                 _ if input == keybinds.fullscreen => {
                     match selected_field {
                         SelectedField::BoardList => {
-                            app.toggle_shown_board_list();
-                            selected_field = SelectedField::ThreadList;
+                            if app.shown_thread_list() {
+                                app.toggle_shown_board_list();
+                                selected_field = SelectedField::ThreadList;
+                            }
                         }
                         SelectedField::ThreadList => {
                             if app.shown_thread() {

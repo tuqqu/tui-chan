@@ -224,7 +224,6 @@ impl App {
         self.shown_state.board_list
     }
 
-    #[allow(dead_code)]
     pub(crate) fn shown_thread_list(&mut self) -> bool {
         self.shown_state.thread_list
     }

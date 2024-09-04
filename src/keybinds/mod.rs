@@ -90,6 +90,7 @@ define_keybinds! {
 
 /// Error parsing keybind configuration file
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum KeybindsError {
     /// Failed to parse single keybind
     Parse {
